@@ -1,401 +1,390 @@
-<!DOCTYPE html>
-<html lang="it" class="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solar Expanse - Planner Industriale Dinamico</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="sect.js"></script>
-    <!-- Google Fonts: Inter & Orbitron -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
+        // Global State & Database Structure
+        let database = {};
+        let activeColonyKey = "";
+
+        let defaultBuilding={
+            silicon:{ 
+                id: "b1", 
+                name: "Miniera di silicio", 
+                type: "producer", popReq: 5,
+                rate: 1, 
+                costMetal: 125, 
+                costAlloy: 0, 
+                prodTotale: 1,
+                selected: true,
+                numMiniere: 1
+            },
+            glass :{ 
+                id: "b2", 
+                name: "Fonderia di vetro", 
+                type: "consumer", 
+                popReq: 10, 
+                rate: 0.1, 
+                costMetal: 0, 
+                selected: true,
+                costAlloy: 300
+            },
+            iron :{
+                id: "b3", 
+                name: "Miniera di metallo", 
+                type: "producer", popReq: 5,
+                rate: 1, 
+                costMetal: 125, 
+                costAlloy: 0, 
+                prodTotale: 1,
+                selected: true,
+                numMiniere: 1
+            },
+            alloy : {
+                id: "b4", 
+                name: "Fonderia di metallo", 
+                type: "consumer", 
+                popReq: 10, 
+                rate: 0.15, 
+                costMetal: 300, 
+                selected: true,
+                costAlloy: 0
+            },
+            carbon : {
+                id: "b5", 
+                name: "Miniera di carbonio", 
+                type: "producer", popReq: 5,
+                rate: 1, 
+                costMetal: 125, 
+                costAlloy: 0, 
+                prodTotale: 1,
+                selected: true,
+                numMiniere: 1
+            },
+            poly : {
+                id: "b4", 
+                name: "Fonderia di polimery", 
+                type: "consumer", 
+                popReq: 10, 
+                rate: 0.05, 
+                costMetal: 0, 
+                selected: true,
+                costAlloy: 200
+            }
+        };
+
+        // Helper function to format decimal numbers beautifully
+        function formatNum(num) {
+            return Number(num).toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            });
         }
-        .font-orbitron {
-            font-family: 'Orbitron', sans-serif;
+
+        // Helper to safely parse localized decimal strings (accepts dot or comma)
+        function parseInputFloat(value) {
+            if (value === undefined || value === null) return 0;
+            const normalized = value.toString().replace(',', '.');
+            const parsed = parseFloat(normalized);
+            return isNaN(parsed) ? 0 : parsed;
         }
-        /* Personalizzazione barra di scorrimento */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+
+        // Default seeds inside initialization
+        window.onload = function() {
+            if (localStorage.getItem('solar_expanse_v3_db')) {
+                database = JSON.parse(localStorage.getItem('solar_expanse_v3_db'));
+            } else {
+                // Initialize clean demo dataset matching user's system constraints
+                database = {
+                    "luna": {
+                        popTot: 500,
+                        popOcc: 0,
+                        buildings: [
+                            defaultBuilding.silicon,
+                            defaultBuilding.glass
+                        ],
+                        planned: {
+                            "b1": 18,
+                            "b2": 10,
+                        }
+                    },
+                };
+                saveToLocalStorage();
+            }
+
+            const storedActiveColony = localStorage.getItem('solar_expanse_v3_active_colony');
+            const keys = Object.keys(database);
+            if (storedActiveColony && database[storedActiveColony]) {
+                activeColonyKey = storedActiveColony;
+            } else if (keys.length > 0) {
+                activeColonyKey = keys[0];
+            } else {
+                activeColonyKey = "Terra Nuova";
+                database[activeColonyKey] = createColonyTemplate();
+                saveToLocalStorage();
+            }
+
+            // Sync dynamic state of building type select inside Modal
+            document.getElementById('bType').addEventListener('change', function() {
+                const rateFieldCont = document.getElementById('rateFieldContainer');
+                const producerFields = document.getElementById('producerFields');
+                const label = document.getElementById('bRateLabel');
+
+                if (this.value === 'producer') {
+                    rateFieldCont.classList.add('hidden');
+                    producerFields.classList.remove('hidden');
+                } else {
+                    rateFieldCont.classList.remove('hidden');
+                    producerFields.classList.add('hidden');
+                    label.innerText = "Consumo Ciclo";
+                }
+            });
+
+            populateDefaultBuildingSelector();
+            populateColonySelector();
+            loadColonyDirectly(activeColonyKey);
+        };
+
+        // Utility: Template generator
+        function createColonyTemplate() {
+            return {
+                popTot: 1000,
+                popOcc: 300,
+                buildings: [
+                    defaultBuilding.iron,
+                    defaultBuilding.alloy
+                ],
+                planned: {
+                    "b3": 0,
+                    "b4": 0
+                }
+            };
         }
-        ::-webkit-scrollbar-track {
-            background: #020617;
+
+        // Save State inside Browser Cache
+        function saveToLocalStorage() {
+            localStorage.setItem('solar_expanse_v3_db', JSON.stringify(database));
+            localStorage.setItem('solar_expanse_v3_active_colony', activeColonyKey);
         }
-        ::-webkit-scrollbar-thumb {
-            background: #1e293b;
-            border-radius: 3px;
+
+        // Populate Colony Switcher select dropdown
+        function populateColonySelector() {
+            const selector = document.getElementById('colonySelector');
+            selector.innerHTML = '';
+
+            Object.keys(database).forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                if (name === activeColonyKey) opt.selected = true;
+                selector.appendChild(opt);
+            });
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #3b82f6;
+
+        /**
+         * Generic combination solver. Finds combinations of counts of dynamic buildings
+         * that use up to freePop of workers without rendering resources balance < 0.
+         */
+        function solveCombinations(buildings, freePop) {
+            let solutions = [];
+            let iterations = 0;
+            const maxIterations = 20000; // Keep recursion bounded to prevent page lock-up
+
+            function search(bIndex, currentCounts, usedPop, netBalance, totalMetal, totalAlloy) {
+                iterations++;
+                if (iterations > maxIterations) return; // safety halt
+
+                if (bIndex === buildings.length) {
+                    if (netBalance >= 0 && usedPop <= freePop) {
+                        solutions.push({
+                            counts: { ...currentCounts },
+                            employed: usedPop,
+                            unemployed: freePop - usedPop,
+                            balance: netBalance,
+                            metal: totalMetal,
+                            alloy: totalAlloy,
+                            utilizationRate: freePop > 0 ? (usedPop / freePop) * 100 : 0
+                        });
+                    }
+                    return;
+                }
+
+                const b = buildings[bIndex];
+                const maxUnits = Math.floor((freePop - usedPop) / b.popReq);
+
+                for (let count = 0; count <= maxUnits; count++) {
+                    currentCounts[b.id] = count;
+                    const nextPop = usedPop + (count * b.popReq);
+                    const effect = b.type === 'producer' ? (count * b.rate) : -(count * b.rate);
+                    const nextBalance = netBalance + effect;
+                    const nextMetal = totalMetal + (count * b.costMetal);
+                    const nextAlloy = totalAlloy + (count * b.costAlloy);
+
+                    search(bIndex + 1, currentCounts, nextPop, nextBalance, nextMetal, nextAlloy);
+                }
+            }
+
+            if (buildings.length > 0) {
+                search(0, {}, 0, 0, 0, 0);
+            }
+            return solutions;
         }
-    </style>
-</head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-blue-600 selection:text-white">
 
-    <header class="border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <svg class="w-8 h-8 text-blue-500 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z" />
-                    <circle cx="12" cy="12" r="3" class="fill-blue-500/20" />
-                </svg>
-                <div>
-                    <h1 class="font-orbitron text-xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">SOLAR EXPANSE</h1>
-                    <p class="text-[10px] text-slate-400 tracking-widest uppercase">Pianificatore Industriale Dinamico</p>
-                </div>
-            </div>
-            <div class="flex items-center space-x-4">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-900 text-blue-400 border border-blue-500/30">
-                    <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-blue-500 animate-ping"></span> Live Analyzer v3.0
-                </span>
-            </div>
-        </div>
-    </header>
+        // Main orchestration driver. Pass rebuildDOM = true to rebuild HTML cards/sliders, false to preserve input focus
+        function calculateAll(rebuildDOM = false) {
+            const popTotale = parseInt(document.getElementById('popTotale').value) || 0;
+            const popOccupata = parseInt(document.getElementById('popOccupata').value) || 0;
+            const freePop = Math.max(0, popTotale - popOccupata);
+            document.getElementById('popLiberaBadge').innerText = freePop;
 
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+            const colony = database[activeColonyKey];
+            if (!colony) return;
 
-        <!-- Welcome banner & Colony Manager -->
-        <div class="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-slate-900 p-6 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div>
-                <h2 class="text-xl font-semibold text-slate-100 font-orbitron">Pianificatore Risorse e Colonie</h2>
-                <p class="text-sm text-slate-400 mt-1">Configura gli edifici, la popolazione e i costi di costruzione in Metallo e Lega per ottimizzare la tua catena produttiva planetaria.</p>
-            </div>
+            // Sync demographic inputs with model
+            colony.popTot = popTotale;
+            colony.popOcc = popOccupata;
 
-            <!-- Colony Selector and Actions Panel -->
-            <div class="flex flex-wrap items-center gap-2 bg-slate-900/40 p-2 rounded-xl border border-slate-800">
-                <div class="flex flex-col">
-                    <span class="text-[9px] uppercase font-bold text-slate-500 tracking-wider ml-1 mb-1">Seleziona Colonia</span>
-                    <select id="colonySelector" onchange="loadColony()" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[150px]">
-                        <!-- Popolato dinamicamente -->
-                    </select>
-                </div>
+            saveToLocalStorage();
 
-                <div class="flex items-end h-full pt-4 space-x-1">
-                    <!-- Rename Button -->
-                    <button onclick="openRenameColonyModal()" title="Rinomina Colonia Attiva" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg transition">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
-                    </button>
-                    <!-- Create New Button -->
-                    <button onclick="openCreateColonyModal()" title="Crea Nuova Colonia" class="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 p-2 rounded-lg transition">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                    </button>
-                    <!-- Save Button -->
-                    <button onclick="saveCurrentColony()" title="Salva Stato Attuale" class="bg-blue-600 hover:bg-blue-500 text-white rounded-lg px-3 py-2 text-xs font-semibold transition flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                        </svg>
-                        Salva
-                    </button>
-                </div>
-            </div>
-        </div>
+            // Dynamic building array
+            const buildings = colony.buildings || [];
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            // Refresh building manager view only when requested (prevents input focus loss)
+            if (rebuildDOM) {
+                renderBuildingList(buildings);
+                renderSandboxSliders(buildings, freePop);
+            }
 
-            <!-- LEFT COLUMN: Demographics & Building Manager (5 Columns) -->
-            <div class="lg:col-span-5 space-y-6">
+            // Retrieve current manual values from the rendered sliders
+            let popImpiegata = 0;
+            let prodRisorse = 0;
+            let consRisorse = 0;
+            let costTotalMetal = 0;
+            let costTotalAlloy = 0;
 
-                <!-- Demographics Card -->
-                <div class="bg-slate-900/60 border border-slate-900 rounded-2xl p-6 space-y-4 backdrop-blur-sm relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-                    <div class="flex items-center justify-between">
-                        <h3 class="font-orbitron font-semibold text-sm tracking-wider uppercase text-blue-400">1. Demografia Colonia</h3>
-                        <svg class="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
+            buildings.forEach(b => {
+                const count = colony.planned[b.id] || 0;
+                popImpiegata += count * b.popReq;
+                if (b.type === 'producer') {
+                    prodRisorse += count * b.rate;
+                } else {
+                    consRisorse += count * b.rate;
+                }
+                costTotalMetal += count * b.costMetal;
+                costTotalAlloy += count * b.costAlloy;
+            });
+
+            const bilancioRisorse = prodRisorse - consRisorse;
+
+            // Render Demographics Bar
+            document.getElementById('hudPopImpiegata').innerText = popImpiegata;
+            document.getElementById('hudPopLiberaTot').innerText = `/ ${freePop}`;
+            const popPercentage = freePop > 0 ? Math.min(100, Math.round((popImpiegata / freePop) * 100)) : 0;
+            document.getElementById('hudPopBar').style.width = `${popPercentage}%`;
+            document.getElementById('hudPopPercentage').innerText = `${popPercentage}% Impiegata`;
+
+            // Balance indicator box styling
+            const balanceHUD = document.getElementById('hudResourceBalance');
+            const hudCard = document.getElementById('hudResourceCard');
+            document.getElementById('hudResProd').innerText = formatNum(prodRisorse);
+            document.getElementById('hudResCons').innerText = formatNum(consRisorse);
+
+            if (bilancioRisorse < 0) {
+                balanceHUD.innerText = formatNum(bilancioRisorse);
+                balanceHUD.className = "text-3xl font-orbitron font-bold text-red-500 animate-pulse";
+                hudCard.className = "bg-slate-900/40 border border-red-950/50 rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden transition-all duration-300 shadow-[0_0_15px_rgba(239,68,68,0.05)]";
+            } else if (bilancioRisorse === 0) {
+                balanceHUD.innerText = "0 (Pari)";
+                balanceHUD.className = "text-3xl font-orbitron font-bold text-sky-400";
+                hudCard.className = "bg-slate-900/40 border border-sky-950/50 rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden transition-all duration-300";
+            } else {
+                balanceHUD.innerText = `+${formatNum(bilancioRisorse)}`;
+                balanceHUD.className = "text-3xl font-orbitron font-bold text-emerald-400";
+                hudCard.className = "bg-slate-900/40 border border-emerald-950/50 rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden transition-all duration-300 shadow-[0_0_15px_rgba(16,185,129,0.05)]";
+            }
+
+            // HUD costs (metal/alloy only)
+            document.getElementById('hudCostMet').innerText = formatNum(costTotalMetal);
+            document.getElementById('hudCostLeg').innerText = formatNum(costTotalAlloy);
+
+            // Status feedback bar
+            const statusInd = document.getElementById('feedbackStatusIndicator');
+            const feedbackText = document.getElementById('feedbackText');
+
+            if (popImpiegata === 0) {
+                statusInd.className = "w-2.5 h-2.5 rounded-full bg-slate-500";
+                feedbackText.innerText = "Nessun edificio programmato nel piano Sandbox attuale.";
+            } else if (popImpiegata > freePop) {
+                statusInd.className = "w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse";
+                feedbackText.innerHTML = `<strong>Over-Allocazione Demografica!</strong> Servono altri <span class="text-red-400 font-bold font-mono">${popImpiegata - freePop}</span> cittadini liberi.`;
+            } else if (bilancioRisorse < 0) {
+                statusInd.className = "w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse";
+                feedbackText.innerHTML = `<strong>Deficit di Risorse!</strong> Sovraccarico dei consumi industriali di <span class="text-red-400 font-bold font-mono">${formatNum(Math.abs(bilancioRisorse))}</span> unità/ciclo.`;
+            } else {
+                statusInd.className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
+                feedbackText.innerHTML = `<strong>Impianti Stabili!</strong> Cittadini rimasti inattivi: <span class="text-emerald-400 font-bold font-mono">${freePop - popImpiegata}</span>. Accumulo: <span class="text-emerald-400 font-bold font-mono">+${formatNum(bilancioRisorse)}</span>.`;
+            }
+
+            // Trigger recommendations
+            runOptimizationEngine(buildings, freePop);
+            renderDatabaseTable();
+        }
+
+        // Renders registry list of dynamic buildings in left column
+        function renderBuildingList(buildings) {
+            const container = document.getElementById('buildingListContainer');
+            container.innerHTML = '';
+
+            if (buildings.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-6 text-slate-500 text-xs border border-dashed border-slate-800 rounded-xl">
+                        Nessun edificio registrato su questa colonia. Aggiungine uno per iniziare.
                     </div>
+                `;
+                return;
+            }
 
-                    <div class="space-y-3">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Popolazione Totale</label>
-                                <input type="number" id="popTotale" value="1000" min="1" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition font-mono" oninput="calculateAll(true)">
+            buildings.forEach(b => {
+                const isProd = b.type === 'producer';
+                const isChecked = b.selected !== false; // Default: true if not specified
+
+                // Show dynamic planetary rate controls if building is a mine (producer)
+                let planetSpecificHtml = "";
+                let typeBadge = "";
+
+                if (isProd) {
+                    typeBadge = `<span id="badge_rate_${b.id}" class="bg-amber-500/10 border border-amber-500/20 text-amber-500 px-2 py-0.5 rounded text-[9px] uppercase font-bold">Produttore (+${formatNum(b.rate)})</span>`;
+
+                    const prodTotVal = b.prodTotale !== undefined ? b.prodTotale : 100;
+                    const numMiniereVal = b.numMiniere !== undefined ? b.numMiniere : 10;
+
+                    planetSpecificHtml = `
+                        <div class="mt-2.5 p-2 bg-slate-900/60 rounded-lg border border-slate-800/40 space-y-1.5">
+                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Calcolo Resa Planetaria</span>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[8px] text-slate-500 block uppercase font-semibold">Prod. Totale</label>
+                                    <input type="number" step="any" value="${prodTotVal}"
+                                           oninput="updateMineProduction('${b.id}', this.value, 'prodTotale')"
+                                           class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-0.5 text-[10px] font-mono text-slate-200 focus:outline-none focus:ring-1 focus:ring-purple-500">
+                                </div>
+                                <div>
+                                    <label class="text-[8px] text-slate-500 block uppercase font-semibold">N. Miniere</label>
+                                    <input type="number" step="1" value="${numMiniereVal}"
+                                           oninput="updateMineProduction('${b.id}', this.value, 'numMiniere')"
+                                           class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-0.5 text-[10px] font-mono text-slate-200 focus:outline-none focus:ring-1 focus:ring-purple-500">
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Popolazione Occupata</label>
-                                <input type="number" id="popOccupata" value="400" min="0" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition font-mono" oninput="calculateAll(true)">
+                            <div class="text-[9px] text-amber-500 font-mono text-right font-semibold">
+                                Resa Singola: <span id="span_rate_${b.id}" class="text-slate-200">${formatNum(b.rate)}</span> /ciclo
                             </div>
                         </div>
-                        <div class="pt-2 border-t border-slate-800/60 flex justify-between items-center">
-                            <span class="text-xs text-slate-400">Popolazione Libera Disponibile:</span>
-                            <span id="popLiberaBadge" class="font-mono font-bold text-lg text-emerald-400">600</span>
-                        </div>
-                    </div>
-                </div>
+                    `;
+                } else {
+                    typeBadge = `<span class="bg-purple-500/10 border border-purple-500/20 text-purple-500 px-2 py-0.5 rounded text-[9px] uppercase font-bold">Consumatore (-${formatNum(b.rate)})</span>`;
+                }
 
-                <!-- Dynamic Building Manager Card -->
-                <div class="bg-slate-900/60 border border-slate-900 rounded-2xl p-6 space-y-4 backdrop-blur-sm relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-purple-500"></div>
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="font-orbitron font-semibold text-sm tracking-wider uppercase text-purple-400">2. Registro Edifici Colonia</h3>
-                            <p class="text-[10px] text-slate-400">Configura, aggiungi o modifica gli stabilimenti disponibili.</p>
-                        </div>
-                        <button onclick="openBuildingModal()" class="bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 border border-purple-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold font-orbitron tracking-wider transition">
-                            + NUOVO EDIFICIO
-                        </button>
-                    </div>
-
-                    <!-- Building List Grid -->
-                    <div id="buildingListContainer" class="space-y-3 max-h-[420px] overflow-y-auto pr-1">
-                        <!-- Generato dinamicamente -->
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- RIGHT COLUMN: Results & Optimization Dashboard (7 Columns) -->
-            <div class="lg:col-span-7 space-y-6">
-
-                <!-- HUD Metric Highlights -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-                    <!-- Free Population Occupied HUD -->
-                    <div class="bg-slate-900/40 border border-slate-900 rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden">
-                        <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Impiego Pop. Libera</span>
-                        <div class="flex items-baseline space-x-2 mt-2">
-                            <span id="hudPopImpiegata" class="text-3xl font-orbitron font-bold text-blue-400">0</span>
-                            <span id="hudPopLiberaTot" class="text-sm text-slate-500">/ 600</span>
-                        </div>
-                        <div class="w-full bg-slate-950 h-2 rounded-full mt-3 overflow-hidden">
-                            <div id="hudPopBar" class="bg-gradient-to-r from-blue-500 to-cyan-400 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
-                        </div>
-                        <span id="hudPopPercentage" class="text-[10px] text-slate-400 mt-1 self-end font-mono">0%</span>
-                    </div>
-
-                    <!-- Net Resource Production HUD -->
-                    <div id="hudResourceCard" class="bg-slate-900/40 border border-slate-900 rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden transition-all duration-300">
-                        <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Bilancio Risorse Netto</span>
-                        <div class="flex items-baseline space-x-2 mt-2">
-                            <span id="hudResourceBalance" class="text-3xl font-orbitron font-bold text-emerald-400">+0</span>
-                            <span class="text-xs text-slate-500">unità / ciclo</span>
-                        </div>
-                        <div class="flex items-center space-x-2 mt-3 text-xs">
-                            <span class="text-slate-500">Produzione: <strong id="hudResProd" class="text-amber-500 font-mono">0</strong></span>
-                            <span class="text-slate-500">|</span>
-                            <span class="text-slate-500">Consumo: <strong id="hudResCons" class="text-purple-400 font-mono">0</strong></span>
-                        </div>
-                    </div>
-
-                    <!-- Budget Cost HUD -->
-                    <div class="bg-slate-900/40 border border-slate-900 rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden">
-                        <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Costo Costruzione Attivo</span>
-
-                        <div class="space-y-2 mt-2 text-xs">
-                            <div class="flex justify-between items-center bg-slate-950/40 p-2 rounded border border-slate-900">
-                                <span class="flex items-center gap-1.5 text-slate-300">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span> Metallo Costruzioni
-                                </span>
-                                <span id="hudCostMet" class="font-mono font-bold text-slate-200">0</span>
-                            </div>
-                            <div class="flex justify-between items-center bg-slate-950/40 p-2 rounded border border-slate-900">
-                                <span class="flex items-center gap-1.5 text-yellow-500">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> Lega Spaziale
-                                </span>
-                                <span id="hudCostLeg" class="font-mono font-bold text-slate-200">0</span>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- Automated Solver / Optimizer Engine -->
-                <div class="bg-slate-900/60 border border-slate-900 rounded-2xl p-6 space-y-4">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                            <h3 class="font-orbitron font-semibold text-base tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">Risolutore di Combinazioni</h3>
-                            <p class="text-xs text-slate-400">Algoritmo stellare per equilibrare la popolazione senza deficit produttivo.</p>
-                        </div>
-                        <button onclick="calculateAll(true)" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg px-4 py-2 text-xs font-semibold font-orbitron tracking-wider transition shadow-lg shadow-emerald-950/50">
-                            RIGENERA STRATEGIE
-                        </button>
-                    </div>
-
-                    <!-- Recommended Solutions Grid -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="optimizationsContainer">
-                        <div class="col-span-3 text-center py-6 text-slate-500 text-sm">Pronto per il calcolo delle combinazioni...</div>
-                    </div>
-                </div>
-
-                <!-- Interactive Manual Sandbox Panel -->
-                <div class="bg-slate-900/60 border border-slate-900 rounded-2xl p-6 space-y-6">
-                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                        <div>
-                            <h3 class="font-orbitron font-semibold text-md text-slate-200">Sandbox di Pianificazione Manuale</h3>
-                            <p class="text-[10px] text-slate-400">Simula il numero preciso di edifici per valutarne costi ed efficacia.</p>
-                        </div>
-                        <button id="resetSandboxBtn" onclick="resetSandbox()" class="text-xs text-slate-400 hover:text-white transition uppercase tracking-wider font-semibold bg-slate-950 px-2.5 py-1 rounded border border-slate-850">
-                            Reset Sliders
-                        </button>
-                    </div>
-
-                    <!-- Sliders dynamically injected here -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5" id="sandboxSlidersContainer">
-                        <div class="col-span-2 text-center text-slate-500 text-xs py-4">Definisci un edificio nel registro per abilitare il Sandbox.</div>
-                    </div>
-
-                    <!-- Immediate balance feedback banner inside Sandbox -->
-                    <div id="sandboxFeedback" class="p-4 rounded-xl flex items-center justify-between text-sm bg-slate-950 border border-slate-900">
-                        <div class="flex items-center space-x-3">
-                            <span id="feedbackStatusIndicator" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <span id="feedbackText" class="text-slate-300">Nessuna costruzione programmata. Configura i cursori per iniziare.</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Local Colonization Database -->
-                <div class="bg-slate-900/60 border border-slate-900 rounded-2xl p-6">
-                    <h3 class="font-orbitron font-semibold text-sm tracking-wider uppercase text-slate-400 mb-4">Database Colonie Archiviate</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs border-collapse">
-                            <thead>
-                                <tr class="text-slate-400 border-b border-slate-800">
-                                    <th class="pb-3 font-semibold uppercase tracking-wider">Nome Colonia</th>
-                                    <th class="pb-3 font-semibold uppercase tracking-wider">Pop. Totale (Libera)</th>
-                                    <th class="pb-3 font-semibold uppercase tracking-wider">Configurazione Edifici</th>
-                                    <th class="pb-3 font-semibold uppercase tracking-wider">Piano Sandbox</th>
-                                    <th class="pb-3 font-semibold uppercase tracking-wider">Costo Costruzione (M / L)</th>
-                                    <th class="pb-3 text-right">Azioni</th>
-                                </tr>
-                            </thead>
-                            <tbody id="colonyDatabaseBody" class="divide-y divide-slate-800 text-slate-300 font-mono">
-                                <!-- Generato dinamicamente -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-            </div>
-
-        </div>
-
-    </main>
-
-    <!-- Modal: Add/Edit Building -->
-    <div id="buildingModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full mx-4 space-y-4">
-            <h3 class="font-orbitron font-semibold text-lg text-slate-100" id="buildingModalTitle">Nuovo Edificio</h3>
-            <input type="hidden" id="editBuildingId">
-
-            <div class="space-y-3 text-xs">
-                <div>
-                    <label class="block font-semibold text-slate-400 uppercase tracking-wider mb-1">Preset Edificio</label>
-                    <select id="defaultBuildingSelector" onchange="loadDefaultBuilding(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
-                        <option value="">Seleziona un edificio predefinito</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block font-semibold text-slate-400 uppercase tracking-wider mb-1">Nome Edificio</label>
-                    <input type="text" id="bName" placeholder="es. Reattore a Fusione" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
-                </div>
-
-                <div>
-                    <label class="block font-semibold text-slate-400 uppercase tracking-wider mb-1">Tipo di Edificio</label>
-                    <select id="bType" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
-                        <option value="producer">Produttore di Risorse (es. Miniera)</option>
-                        <option value="consumer">Consumatore di Risorse (es. Fabbrica)</option>
-                    </select>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block font-semibold text-slate-400 uppercase tracking-wider mb-1">Popolazione Richiesta</label>
-                        <input type="number" id="bPopReq" value="10" min="1" step="1" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition font-mono">
-                    </div>
-                    <!-- Standard Cycle Rate Field (used directly for consumers) -->
-                    <div id="rateFieldContainer">
-                        <label class="block font-semibold text-slate-400 uppercase tracking-wider mb-1" id="bRateLabel">Consumo Ciclo</label>
-                        <input type="number" id="bRate" value="5" min="0" step="any" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition font-mono">
-                    </div>
-                </div>
-
-                <!-- Mine Planet specific rate inputs (used for producers) -->
-                <div id="producerFields" class="grid grid-cols-2 gap-3 hidden">
-                    <div>
-                        <label class="block font-semibold text-slate-400 uppercase tracking-wider mb-1">Prod. Totale Pianeta</label>
-                        <input type="number" id="bProdTotale" value="100" min="0" step="any" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition font-mono">
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-400 uppercase tracking-wider mb-1">Numero Miniere</label>
-                        <input type="number" id="bNumMiniere" value="10" min="1" step="1" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition font-mono">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-800/60">
-                    <div>
-                        <label class="block font-semibold text-slate-400 uppercase tracking-wider mb-1">Costo Metallo</label>
-                        <input type="number" id="bCostMetal" value="50" min="0" step="any" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition font-mono">
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-400 uppercase tracking-wider mb-1">Costo Lega</label>
-                        <input type="number" id="bCostAlloy" value="15" min="0" step="any" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition font-mono">
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex justify-end space-x-3 pt-2">
-                <button onclick="closeBuildingModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg px-4 py-2 text-xs font-semibold transition">Annulla</button>
-                <button onclick="saveBuilding()" class="bg-purple-600 hover:bg-purple-500 text-white rounded-lg px-4 py-2 text-xs font-semibold transition">Salva Edificio</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Create Colony -->
-    <div id="colonyModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full mx-4 space-y-4">
-            <h3 class="font-orbitron font-semibold text-lg text-slate-100">Nuova Colonia</h3>
-            <p class="text-xs text-slate-400">Inserisci il nome identificativo del nuovo pianeta o settore da colonizzare.</p>
-            <div>
-                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Nome Colonia / Sistema</label>
-                <input type="text" id="newColonyName" placeholder="es. Kepler-452b Avamposto" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition font-mono">
-            </div>
-            <div class="flex justify-end space-x-3 pt-2">
-                <button onclick="closeColonyModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg px-4 py-2 text-xs font-semibold transition">Annulla</button>
-                <button onclick="confirmCreateColony()" class="bg-blue-600 hover:bg-blue-500 text-white rounded-lg px-4 py-2 text-xs font-semibold transition">Crea Colonia</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Rename Colony -->
-    <div id="renameColonyModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full mx-4 space-y-4">
-            <h3 class="font-orbitron font-semibold text-lg text-slate-100">Rinomina Colonia</h3>
-            <p class="text-xs text-slate-400">Rinomina l'insediamento industriale selezionato.</p>
-            <div>
-                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Nuovo Nome Colonia</label>
-                <input type="text" id="renameColonyInput" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition font-mono">
-            </div>
-            <div class="flex justify-end space-x-3 pt-2">
-                <button onclick="closeRenameColonyModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg px-4 py-2 text-xs font-semibold transition">Annulla</button>
-                <button onclick="confirmRenameColony()" class="bg-blue-600 hover:bg-blue-500 text-white rounded-lg px-4 py-2 text-xs font-semibold transition">Rinomina</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Toast alerts -->
-    <div id="toast" class="fixed bottom-4 right-4 z-50 bg-slate-900 border border-blue-500 text-slate-100 rounded-xl px-4 py-3 shadow-2xl flex items-center space-x-3 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
-        <span class="w-2.5 h-2.5 rounded-full bg-blue-500 animate-ping" id="toastStatusDot"></span>
-        <span id="toastMessage" class="text-xs font-medium">Operazione completata!</span>
-    </div>
-
-    <!-- Footer -->
-    <footer class="border-t border-slate-900 bg-slate-950 mt-12 py-6 text-center text-xs text-slate-600">
-        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2 font-sans">
-            <p>© 2026 Solar Expanse Industrial Planner v3.0.</p>
-            <p>Ottimizzato per dispositivi mobili e desktop con supporto LocalStorage.</p>
-        </div>
-    </footer>
-
-    
+                const card = document.createElement('div');
+                card.className = `bg-slate-950 border ${isChecked ? 'border-slate-850' : 'border-slate-900 opacity-60'} p-3.5 rounded-xl space-y-2 relative overflow-hidden group hover:border-slate-700 transition-colors`;
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex items-start space-x-2.5">
+                            <!-- Styled selection checkbox -->
                             <div class="pt-0.5">
                                 <input type="checkbox" id="check_${b.id}" ${isChecked ? 'checked' : ''}
                                        onchange="toggleBuildingSelection('${b.id}')"
@@ -1125,10 +1114,7 @@
             toast.classList.add('translate-y-0', 'opacity-100');
 
             setTimeout(() => {
-                    toast.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
-                    toast.classList.remove('translate-y-0', 'opacity-100');
-                }, 3000);
-            }
-        -->
-</body>
-</html>
+                toast.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 3000);
+        }
