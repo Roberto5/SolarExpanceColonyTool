@@ -1,0 +1,4 @@
+ricerca popolazione
+riduce pop richiesta del 5% -> 5% ->10% -> 10%
+
+inserire riduzione costo edifici
