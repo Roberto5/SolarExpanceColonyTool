@@ -54,7 +54,7 @@ function loadColonyDirectly(name) {
     const data = database.colonies.find(c => c.name === name);
     if (!data) return;
     activeColonyKey = name;
-
+    colonyActive=database.colonies.find(c=>c.name===name);
     saveToLocalStorage();
 
 
@@ -65,7 +65,7 @@ function loadColonyDirectly(name) {
 
     // Keep Colony selector in sync
     document.getElementById('colonySelector').value = name;
-
+    
     calculateAll(true);// TODO rifare i calcoli
     triggerToast(`Colonia caricata: ${name}`, "blue");
 }
@@ -118,73 +118,8 @@ function closeRenameColonyModal() {
 function closeBuildingModal() {
     document.getElementById('buildingModal').classList.add('hidden');
 }
-/*/ ******************************* resourceModal *******************************
-function openResourceModal(edit=false,type="") {
-    button=document.getElementById('removeDepositButton');
-    selector = document.getElementById('resourceTypeSelector');
-    if (edit) {
-        button.classList.remove('hidden');
-        selector.disabled = true;
-        selector.value = type;
-        changeImagePreview(type);
-    }
-    else {
-        selector.disabled = false;
-        button.classList.add('hidden');
-    }
-    document.getElementById('resourceModal').classList.remove('hidden');
-}
-function closeResourceModal() {
-    document.getElementById('resourceModal').classList.add('hidden');
-}
-function changeImagePreview(value) {
-    resourcePreview = document.getElementById('resourcePreview');
-    if (value === "") {
-        resourcePreview.src = "";
-        resourcePreview.classList.add('hidden');
-    }
-    else {
-        resourcePreview.classList.remove('hidden');
-        resourcePreview.src = `img/${value}.png`;
-    }
-}
 
-function confirmAddResource() {
-    const resourceType = document.getElementById('resourceTypeSelector').value;
-    const depositRateInput = document.getElementById('depositRateInput').value;
-    const resourceListContainer = document.getElementById('resourceListContainer');
-    activeColony = database.colonies.find(c => c.name === activeColonyKey);
-    if (!resourceType) {
-        triggerToast("Seleziona un tipo di risorsa", "red");
-        return;
-    }
-
-    const depositRate = parseInputFloat(depositRateInput);
-    if (isNaN(depositRate) || depositRate <= 0) {
-        triggerToast("Inserisci un tasso di produzione valido", "red");
-        return;
-    }
-
-    try {
-        activeColony.addDepositRate(resourceType, depositRate);
-        triggerToast(`Tasso di produzine per ${resourceType} aggiunto: ${depositRate}`, "green");
-        closeResourceModal();
-        calculateAll(true);
-    } catch (error) {
-        triggerToast(error.message, "red");
-    }
-    populateResourceList();
-}
-
-function removeDeposit() {
-    const type = document.getElementById('resourceTypeSelector').value;
-    delete activeColony.depositRate[type];
-            triggerToast(`Tasso di produzione per ${type} rimosso`, "blue");
-            populateResourceList();
-            calculateAll(true); 
-            closeResourceModal();
-}
-// Popola il selettore di tipi di risorsa */
+// Popola il selettore di tipi di risorsa 
 function populateResourceselector() {
     const selector = document.getElementById('resourceTypeSelector');
     selector.innerHTML = '<option value="">Seleziona un tipo di risorsa</option>';
@@ -195,7 +130,7 @@ function populateResourceselector() {
         option.textContent = resourcesTypes[key];
         selector.appendChild(option);
     });
-}   //****************************** fine resource modal */
+}   
 
 function populateResourceList() {
     activeColony = database.colonies.find(c => c.name === activeColonyKey);

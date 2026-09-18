@@ -4,6 +4,7 @@ class colony {
     popTot = 500;
     popOcc = 100;
     name = "";
+    planned={};
     /**
      * 
      * @param {string} name 
