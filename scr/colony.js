@@ -6,7 +6,7 @@ class colony {
         this.freePop=this._popTot-this._popOcc;
     }
     get popTot() {
-        return this._pop;
+        return this._popTot;
     }
     set popOcc(value) {
         this._popOcc=value;
@@ -20,6 +20,8 @@ class colony {
     freePop = 400;
     name = "";
     planned={};
+    optimal={};
+    utilizationPopRate={};// {risorsa:percentuale,...}
     /**
      * 
      * @param {string} name 
@@ -51,6 +53,11 @@ class colony {
         if (this.depositRate.hasOwnProperty(newBuilding.resourceType)) 
             newBuilding.productionRate = newBuilding.production*this.depositRate[newBuilding.resourceType];
         this.buildings.push(newBuilding);
+        this.buildings.sort(function(a,b) {
+            let a1=Array.isArray(a.resourceType) ? a.resourceType[0] :a.resourceType ;
+            let b1=Array.isArray(b.resourceType) ? b.resourceType[0] :b.resourceType ;
+            return a1.localeCompare(b1);
+        });
     }
     /**
      * Adds a new deposit rate for a resource type

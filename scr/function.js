@@ -174,3 +174,12 @@ function triggerToast(message, type = 'blue') {
         toast.classList.remove('translate-y-0', 'opacity-100');
     }, 3000);
 }
+function setSlider(id, value) {
+    const slider=document.getElementById("sandboxIn_"+id);
+    slider.value=value;
+    syncSandboxCounts(id, 'input');
+}
+function setOptimalNumbers() {
+    colonyActive.planned=colonyActive.optimal;
+    calculateAll(true);
+}

@@ -290,6 +290,10 @@
                             <p class="text-[10px] text-slate-400">Simula il numero preciso di edifici per valutarne
                                 costi ed efficacia.</p>
                         </div>
+                        <button onclick="setOptimalNumbers();"
+                            class="text-xs text-slate-400 hover:text-white transition uppercase tracking-wider font-semibold bg-slate-950 px-2.5 py-1 rounded border border-slate-850">
+                            Imposta numeri ottimali
+                        </button>
                         <button id="resetSandboxBtn" onclick="resetSandbox()"
                             class="text-xs text-slate-400 hover:text-white transition uppercase tracking-wider font-semibold bg-slate-950 px-2.5 py-1 rounded border border-slate-850">
                             Reset Sliders
@@ -302,7 +306,14 @@
                             registro per abilitare il Sandbox.</div>
                     </div>
                 </div>
+                <div class="bg-slate-900/60 border border-slate-900 rounded-2xl p-6">
+                    <h3 class="font-orbitron font-semibold text-sm tracking-wider uppercase text-slate-400 mb-4">
+                        priorità
+                    </h3>
+                    <div id="priority">
 
+                    </div>
+                </div>
                 <!-- Local Colonization Database -->
                 <div class="bg-slate-900/60 border border-slate-900 rounded-2xl p-6">
                     <h3 class="font-orbitron font-semibold text-sm tracking-wider uppercase text-slate-400 mb-4">

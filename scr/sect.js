@@ -7,6 +7,7 @@ let depositModal;
 let reductionPop = 0;
 let reductionCost = 0;
 let colonyActive;
+let resList=[];
 const resourcesTypes = [
     "silicon",
     "iron",
@@ -87,9 +88,9 @@ function calculateAll(rebuildDOM = false) {
     colonyActive.popOcc = popOccupata;
     const buildings = colonyActive.buildings || [];
     // calcolo della produzione per ogni edificio
-    const result = {
-        production: {}, 
-        occupiedPopulation: 0, 
+    let result = {
+        production: {},
+        occupiedPopulation: 0,
         requiredResources: {},
     };
     // Calculate occupied population, required resources and production for each building type
@@ -173,25 +174,34 @@ function calculateAll(rebuildDOM = false) {
     if (result.occupiedPopulation > freePop) {//from-blue-500 to-cyan-400
         hudPopBar.style.width = '100%';
         hudPopPercentage.textContent = `${(Math.round(result.occupiedPopulation * 100 / freePop))}%`;
-        hudPopBar.classList.add('from-red-500','to-red-300');
-        hudPopBar.classList.remove('from-blue-500','to-cyan-400');
+        hudPopBar.classList.add('from-red-500', 'to-red-300');
+        hudPopBar.classList.remove('from-blue-500', 'to-cyan-400');
         hudPopImpiegata.classList.add('text-red-400');
         hudPopImpiegata.classList.remove('text-blue-400');
     }
     else {
         hudPopBar.style.width = `${(result.occupiedPopulation * 100 / freePop)}%`;
         hudPopPercentage.textContent = `${(Math.round(result.occupiedPopulation * 100 / freePop))}%`;
-        hudPopBar.classList.remove('from-red-500','to-red-300');
-        hudPopBar.classList.add('from-blue-500','to-cyan-400');
+        hudPopBar.classList.remove('from-red-500', 'to-red-300');
+        hudPopBar.classList.add('from-blue-500', 'to-cyan-400');
         hudPopImpiegata.classList.remove('text-red-400');
         hudPopImpiegata.classList.add('text-blue-400');
     }
-    hudPopImpiegata.textContent = ""+result.occupiedPopulation;
+    hudPopImpiegata.textContent = "" + result.occupiedPopulation;
     hudPopLiberaTot.textContent = freePop;
+
+    result = calculateOptimalBuildings(colonyActive);
+    colonyActive.optimal=result;
+
     if (rebuildDOM) {
         renderBuildingList(buildings);
         renderSandboxSliders(buildings, freePop);
         populateResourceList();
+    }
+    let spanTip;
+    for (let key in result) {
+        spanTip=document.getElementById("spanTip"+key);
+        if (spanTip) spanTip.textContent=result[key];
     }
     saveToLocalStorage();
 }
@@ -301,8 +311,11 @@ function renderSandboxSliders(buildings, freePop) {
     }
 
     const colony = colonyActive;
-
     buildings.forEach(b => {
+        if (b.type=="producer") {
+            if (resList.findIndex(x=>x==b.resourceType)==-1) resList.push(b.resourceType);
+        }
+        
         let val = 0;
         if (colony.planned) val = colony.planned[b.id] || 0;
         const maxVal = Math.max(10, Math.floor(freePop / b.popReq));
@@ -319,14 +332,73 @@ function renderSandboxSliders(buildings, freePop) {
                     </div>
                     <input type="range" id="sandboxSl_${b.id}" min="0" max="${maxVal}" value="${val}" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500" oninput="syncSandboxCounts('${b.id}', 'slider')">
                     <div class="flex justify-between text-[9px] text-slate-500">
-                        <span id="spanTip">0</span>
+                        <span id="spanTip${b.id}" onclick="setSlider('${b.id}',this.innerText);" class="cursor-pointer">0</span>
                         <span>Max Calcolato: ${Math.floor(freePop / b.popReq)}</span>
                     </div>
                 `;
         container.appendChild(block);
     });
-}
+    //rendere priority
+    let priority=document.getElementById('priority');
+    priority.innerHTML="";
+    resList.forEach((res) => {
+        let val =0;
+        if (colony.utilizationPopRate[res]) {
+            val=colony.utilizationPopRate[res];
+        }
+        const block = document.createElement('div');
+        block.className = "space-y-2 bg-slate-950/40 border border-slate-900 p-3 rounded-xl";
+        block.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-semibold text-slate-200 flex items-center gap-1.5 truncate max-w-[170px]">
+                            <img src="img/${res}.png" alt="${res}" title="${res}">
+                        </span>
+                        <input type="number" id="priorityIn_${res}" value="${val}" min="0" class="w-14 bg-slate-950 border border-slate-800 rounded px-1 py-0.5 text-center text-xs font-mono text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500" oninput="syncPriorityCounts('${res}', 'input')">
+                    </div>
+                    <input type="range" id="prioritySl_${res}" min="0" max="100" value="${val}" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500" oninput="syncPriorityCounts('${res}', 'slider')">
+                    
+                `;
+        priority.appendChild(block);
+    
+    });
 
+}
+function syncPriorityCounts(bId, source) {
+    if (!colonyActive) return;
+    const slider = document.getElementById(`prioritySl_${bId}`);
+    const input = document.getElementById(`priorityIn_${bId}`);
+    let val = 0;
+    if (source === 'slider') {
+        val = parseInt(slider.value) || 0;
+        input.value = val;
+    } else {
+        val = Math.max(0, parseInt(input.value) || 0);
+        slider.value = val;
+    }
+    colonyActive.utilizationPopRate[bId] = val;
+    let remain=100-val;
+    let totP=val;
+    for (let i=0;i<resList.length;i++){
+        if (resList[i]!=bId) {
+            let value=Math.floor(remain/((resList.length)-1));
+            totP+=value;
+            colonyActive.utilizationPopRate[resList[i]] = value;
+            let tempS = document.getElementById(`prioritySl_${resList[i]}`);
+            let tempI = document.getElementById(`priorityIn_${resList[i]}`);
+            tempS.value = value;
+            tempI.value = value;
+        }
+    }
+    if (totP<100) {
+        colonyActive.utilizationPopRate[resList[resList.length-1]]+=100-totP;
+        let tempS = document.getElementById(`prioritySl_${resList[resList.length-1]}`);
+            let tempI = document.getElementById(`priorityIn_${resList[resList.length-1]}`);
+            tempS.value = value;
+            tempI.value = value;
+    }
+    saveToLocalStorage();
+    calculateAll();
+}
 // Sync visual sliders with the numerical value inputs
 function syncSandboxCounts(bId, source) {
 
@@ -545,15 +617,15 @@ function editBuilding(id) {
 
 // Deletes building from colony registry and planned counts
 function deleteBuilding(id) {
-    const colony = database[activeColonyKey];
-    if (!colony) return;
+    
+    if (!colonyActive) return;
 
-    const index = colony.buildings.findIndex(b => b.id === id);
+    const index = colonyActive.buildings.findIndex(b => b.id === id);
     if (index !== -1) {
-        const bName = colony.buildings[index].name;
-        colony.buildings.splice(index, 1);
+        const bName = colonyActive.buildings[index].name;
+        colonyActive.buildings.splice(index, 1);
         // Clean planned count key
-        delete colony.planned[id];
+        delete colonyActive.planned[id];
 
         saveToLocalStorage();
         calculateAll(true);
@@ -561,7 +633,149 @@ function deleteBuilding(id) {
     }
 }
 
-//calcolo numero edifici ottimali
+/* Calculates optimal building counts based on current colony state**
+ * 
+ * @param {colony} colony 
+ * returns {object} - Object {"id": "count", ...} with optimal building counts
+ */
 function calculateOptimalBuildings(colony) {
+    if (!colony || !Array.isArray(colony.buildings)) return {};
 
+    // Filter out buildings that are not selected
+    const selectedBuildings = colony.buildings.filter(building => building.selected !== false);
+    // object {resources: [building, building...],...}
+    let buildings = {};
+    let result = {};
+    for (const building of selectedBuildings) {
+        if (building.type === 'consumer') {
+            for (const resource of building.resourceType) {
+                if (!buildings[resource]) buildings[resource] = [];
+                buildings[resource].push(building);
+            }
+        }
+        else {
+            if (!buildings[building.resourceType]) buildings[building.resourceType] = [];
+            buildings[building.resourceType].push(building);
+        }
+    }
+    let tempfilter = {};
+    for (const key in buildings) {
+        if (buildings[key].some(v => v.type == "producer")) tempfilter[key] = buildings[key];
+    }
+    buildings = tempfilter;
+    // prepare result object with building IDs as keys and initial values set
+
+    colony.buildings.forEach(building => {
+        result[building.id] = 0;
+    });
+    // cobntrollo che la somma dei rating sia 100
+    let totpoprate = 0;
+    for (const v in colony.utilizationPopRate) {
+        totpoprate += colony.utilizationPopRate[v];
+    }
+    if (totpoprate != 100) { // altrimenti 
+        //divido in parti uguali
+        colony.utilizationPopRate = {};
+        let res = Object.keys(buildings);
+        let d = parseInt(100 / res.length);
+        for (let i = 0; i < res.length; i++) {
+            colony.utilizationPopRate[res[i]] = d;
+        }
+        // se la divisione non è intera aggiungo il resto all'ultimo elemento
+        if (100 % res.length != 0) colony.utilizationPopRate[res[res.length - 1]] += 100 % res.length;
+    }
+    //ciclo principare per ogni risorsa
+    for (const resourceType in buildings) {
+        let b=buildings[resourceType];
+        let mine = b.filter(v => v.type == "producer"); mine = mine[0];
+        let factory = b.filter(v => v.type == "consumer");
+        let end = false;
+        let popAvailable = Math.floor(colony.freePop * colony.utilizationPopRate[resourceType] / 100);
+        let production = 0;
+        let popUsed = 0;
+        let last = {};
+        let pointer = "";
+        /**
+         * algoritmo
+         * 1 aumento di uno la miniera
+         * 2 calcolo produzione e pop usata
+         * 3 se pop finisce calo n miniere e esco
+         * 4 aumento di uno le fabriche
+         * 5 se la produzione va in negativo vado al punto 1
+         * 6 se la pop finisce diminuisco e esco
+         */
+        let opetation=0;
+        while (!end) {
+            result[mine.id]++;
+            production = calcProduction(b, result,resourceType);
+            popUsed = calcPop(b, result);
+            if (popUsed > popAvailable) {
+                result[mine.id]--;
+                end=true;
+                break;
+            }
+            //aumento fabriche
+            while ((production >= 0) && (factory.length>0)) {
+                pointer = calcMin(factory, result);
+                result[pointer]++;
+                production = calcProduction(b, result,resourceType);
+                popUsed = calcPop(b, result);
+                if (popUsed > popAvailable) {
+                    result[pointer]--;
+                    end=true;
+                    break;
+                }
+                if (opetation++>10000) {
+                throw new Error("infinity loop");
+                
+            }
+            }
+            if (opetation++>10000) {
+                throw new Error("infinity loop");//@todo triggerato infitini loop, indagare
+                
+            }
+        }
+    }
+
+    return result;
+}
+//calcola l'edificio con il numero minimo di edifici
+function calcMin(b, result) {
+    let ids = b.map(item => item.id);
+    let min = -1;
+    let minb = "";
+    for (i = 0; i < ids.length; i++) {
+        if (min == -1) {
+            min = result[ids[i]];
+            minb = ids[i];
+        }
+        else {
+            if (min > result[ids[i]]) {
+                min = result[ids[i]];
+                minb = ids[i];
+            }
+        }
+    }
+    return minb;
+}
+
+function calcPop(b, result) {
+    let pop = 0;
+    for (const v of b) {
+        pop += v.popReq * result[v.id];
+    }
+    return pop;
+}
+function calcProduction(b, result,res) {
+    let prod = 0;
+    for (const v of b) {
+        if (v.type == "producer") {
+            prod += v.productionRate * result[v.id];
+        }
+        else {
+            let i=v.resourceType.findIndex(r => r == res)
+            prod -= v.rate[i] * result[v.id];
+        }
+    }
+    return prod;
 }
