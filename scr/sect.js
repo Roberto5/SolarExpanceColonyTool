@@ -88,34 +88,22 @@ function calculateAll(rebuildDOM = false) {
     const buildings = colonyActive.buildings || [];
     // calcolo della produzione per ogni edificio
     const result = {
-        production: {}, // ok
-        occupiedPopulation: 0, //ok
+        production: {}, 
+        occupiedPopulation: 0, 
         requiredResources: {},
-        buildings: {}
     };
-
+    // Calculate occupied population, required resources and production for each building type
     buildings.forEach((building) => {
         const count = Number(colonyActive.planned?.[building.id] || 0);
         if (building.selected === false || count <= 0) return;
-
         const populationCost = (Number(building.popReq) || 0) * count;
         result.occupiedPopulation += populationCost;
-
-        result.buildings[building.id] = {
-            count,
-            population: populationCost,
-            production: 0,
-            requiredResources: {}
-        };
-
         // Include construction costs for every planned instance of the building.
         if (building.cost && typeof building.cost === 'object') {
             Object.entries(building.cost).forEach(([resourceType, unitCost]) => {
                 const totalCost = (Number(unitCost) || 0) * count;
                 result.requiredResources[resourceType] =
                     (result.requiredResources[resourceType] || 0) + totalCost;
-                result.buildings[building.id].requiredResources[resourceType] =
-                    (result.buildings[building.id].requiredResources[resourceType] || 0) + totalCost;
             });
         }
         // calcolo produzione 
@@ -128,16 +116,6 @@ function calculateAll(rebuildDOM = false) {
         else {
             result.production[building.resourceType] = (result.production[building.resourceType] || 0) + count * building.productionRate;
         }
-
-
-        /*    const totalProduction = (Number(building.productionRate) || 0) * count;
-            result.production[building.resourceType] = (result.production[building.resourceType] || 0) + totalProduction* (building.type === 'consumer' ? -1 : 1);
-            result.buildings[building.id].production = totalProduction;
-            result.buildings[building.id].resource = building.resourceType;
-            return;*/
-
-
-
     });
 
 
