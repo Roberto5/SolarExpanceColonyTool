@@ -44,6 +44,8 @@ class deposit {
         else {
             this.resourcePreview.classList.remove('hidden');
             this.resourcePreview.src = `img/${value}.png`;
+            this.resourcePreview.alt = value;
+            this.resourcePreview.title = value;
         }
     }
     confirmAddResource() {

@@ -247,7 +247,7 @@
                             Libera</span>
                         <div class="flex items-baseline space-x-2 mt-2">
                             <span id="hudPopImpiegata" class="text-3xl font-orbitron font-bold text-blue-400">0</span>
-                            <span id="hudPopLiberaTot" class="text-sm text-slate-500">/ 600</span>
+                            / <span id="hudPopLiberaTot" class="text-sm text-slate-500">600</span>
                         </div>
                         <div class="w-full bg-slate-950 h-2 rounded-full mt-3 overflow-hidden">
                             <div id="hudPopBar"
@@ -262,17 +262,8 @@
                         class="bg-slate-900/40 border border-slate-900 rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden transition-all duration-300">
                         <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Bilancio Risorse
                             Netto</span>
-                        <div class="flex items-baseline space-x-2 mt-2">
-                            <span id="hudResourceBalance"
-                                class="text-3xl font-orbitron font-bold text-emerald-400">+0</span>
-                            <span class="text-xs text-slate-500">unità / ciclo</span>
-                        </div>
-                        <div class="flex items-center space-x-2 mt-3 text-xs">
-                            <span class="text-slate-500">Produzione: <strong id="hudResProd"
-                                    class="text-amber-500 font-mono">0</strong></span>
-                            <span class="text-slate-500">|</span>
-                            <span class="text-slate-500">Consumo: <strong id="hudResCons"
-                                    class="text-purple-400 font-mono">0</strong></span>
+                        <div id="productionHUD" class="w-full mt-2 overflow-hidden">
+                         
                         </div>
                     </div>
 
@@ -309,17 +300,6 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5" id="sandboxSlidersContainer">
                         <div class="col-span-2 text-center text-slate-500 text-xs py-4">Definisci un edificio nel
                             registro per abilitare il Sandbox.</div>
-                    </div>
-
-                    <!-- Immediate balance feedback banner inside Sandbox -->
-                    <div id="sandboxFeedback"
-                        class="p-4 rounded-xl flex items-center justify-between text-sm bg-slate-950 border border-slate-900">
-                        <div class="flex items-center space-x-3">
-                            <span id="feedbackStatusIndicator"
-                                class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <span id="feedbackText" class="text-slate-300">Nessuna costruzione programmata. Configura i
-                                cursori per iniziare.</span>
-                        </div>
                     </div>
                 </div>
 

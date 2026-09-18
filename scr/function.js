@@ -140,7 +140,7 @@ function populateResourceList() {
         const resourceItem = document.createElement('div');
         resourceItem.className = 'flex w-14 shrink-0 cursor-pointer flex-col items-center justify-center bg-slate-800 rounded-lg p-2';
         resourceItem.innerHTML = `
-            <img src="img/${type}.png" alt="${type}" class="w-10 h-10 object-contain">
+            <img src="img/${type}.png" alt="${type}" title="${type}"  class="w-10 h-10 object-contain">
             <span class="text-slate-400 text-xs mt-1">${rate}</span>
         `;
         resourceItem.addEventListener('click', () => {

@@ -86,7 +86,7 @@ function calculateAll(rebuildDOM = false) {
     colonyActive.popTot = popTotale;
     colonyActive.popOcc = popOccupata;
     const buildings = colonyActive.buildings || [];
-// calcolo della produzione per ogni edificio
+    // calcolo della produzione per ogni edificio
     const result = {
         production: {}, // ok
         occupiedPopulation: 0, //ok
@@ -118,18 +118,28 @@ function calculateAll(rebuildDOM = false) {
                     (result.buildings[building.id].requiredResources[resourceType] || 0) + totalCost;
             });
         }
-
-        if (building.type === 'producer' && building.resourceType) {
-            const totalProduction = (Number(building.productionRate) || 0) * count;
-            result.production[building.resourceType] = (result.production[building.resourceType] || 0) + totalProduction;
-            result.buildings[building.id].production = totalProduction;
-            result.buildings[building.id].resource = building.resourceType;
-            return;
+        // calcolo produzione 
+        if (building.type === 'consumer') {
+            for (const r in building.rate) {
+                v = building.rate[r] * count;
+                result.production[building.resourceType[r]] = (result.production[building.resourceType[r]] || 0) - v;
+            }
+        }
+        else {
+            result.production[building.resourceType] = (result.production[building.resourceType] || 0) + count * building.productionRate;
         }
 
 
+        /*    const totalProduction = (Number(building.productionRate) || 0) * count;
+            result.production[building.resourceType] = (result.production[building.resourceType] || 0) + totalProduction* (building.type === 'consumer' ? -1 : 1);
+            result.buildings[building.id].production = totalProduction;
+            result.buildings[building.id].resource = building.resourceType;
+            return;*/
+
+
+
     });
-    
+
 
     // Display each required resource with its quantity and icon.
     const budgetHUD = document.getElementById('budgetCostHUD');
@@ -145,7 +155,62 @@ function calculateAll(rebuildDOM = false) {
             `)
             .join('');
     }
+    // display the total production of each resource
+    const productionHUD = document.getElementById('productionHUD');
+    if (productionHUD) {
+        const productionRows = Object.entries(result.production)
+            .map(([resource, amount]) => {
+                const value = Number(amount) || 0;
+                const colorClass = value >= 0 ? 'text-emerald-400' : 'text-red-400';
+                const formattedValue = value > 0 ? `+${formatNum(value)}` : formatNum(value);
 
+                return `
+                    <td class="w-1/2 sm:w-1/3 p-1">
+                        <div class="flex items-center justify-center gap-1.5 rounded-lg bg-slate-950/60 px-2 py-1.5 ${colorClass}">
+                            <span class="font-mono whitespace-nowrap">${formattedValue}</span>
+                            <img src="img/${resource}.png" alt="${resource}" title="${resource}"
+                                class="w-5 h-5 shrink-0 object-contain">
+                        </div>
+                    </td>
+                `;
+            });
+
+        const tableRows = [];
+        for (let index = 0; index < productionRows.length; index += 3) {
+            tableRows.push(`<tr>${productionRows.slice(index, index + 3).join('')}</tr>`);
+        }
+
+        productionHUD.innerHTML = `
+            <table class="w-full table-fixed text-xs">
+                <tbody>${tableRows.join('')}</tbody>
+            </table>
+        `;
+    }
+    // display free pop
+    const hudPopImpiegata = document.getElementById('hudPopImpiegata');
+    const hudPopLiberaTot = document.getElementById('hudPopLiberaTot');
+    const hudPopBar = document.getElementById('hudPopBar');
+    const hudPopPercentage = document.getElementById('hudPopPercentage');
+    // freepop:ocpop=100:x ocpop*100/freepop
+    if (result.occupiedPopulation > freePop) {//from-blue-500 to-cyan-400
+        hudPopBar.style.width = '100%';
+        hudPopPercentage.textContent = `${(Math.round(result.occupiedPopulation * 100 / freePop))}%`;
+        hudPopBar.classList.add('from-red-500','to-red-300');
+        hudPopBar.classList.remove('from-blue-500','to-cyan-400');
+        hudPopImpiegata.classList.add('text-red-400');
+        hudPopImpiegata.classList.remove('text-blue-400');
+    }
+    else {
+        hudPopBar.style.width = `${(result.occupiedPopulation * 100 / freePop)}%`;
+        hudPopPercentage.textContent = `${(Math.round(result.occupiedPopulation * 100 / freePop))}%`;
+        hudPopBar.classList.remove('from-red-500','to-red-300');
+        hudPopBar.classList.add('from-blue-500','to-cyan-400');
+        hudPopImpiegata.classList.remove('text-red-400');
+        hudPopImpiegata.classList.add('text-blue-400');
+    }
+    hudPopImpiegata.textContent = ""+result.occupiedPopulation;
+    hudPopLiberaTot.textContent = freePop;
+    let width = 0;
     if (rebuildDOM) {
         renderBuildingList(buildings);
         renderSandboxSliders(buildings, freePop);
@@ -177,13 +242,13 @@ function renderBuildingList(buildings) {
         let typeBadge = "";
 
         if (isProd) {
-            typeBadge = `<span id="badge_rate_${b.id}" class="bg-amber-500/10 border border-amber-500/20 text-amber-500 px-2 py-0.5 rounded text-[9px] uppercase font-bold">Produttore (+${formatNum(b.productionRate)}) <img src="img/${b.resourceType}.png" alt="${b.resourceType}" class="inline-flex w-4 h-4 object-contain"></span>`;
+            typeBadge = `<span id="badge_rate_${b.id}" class="bg-amber-500/10 border border-amber-500/20 text-amber-500 px-2 py-0.5 rounded text-[9px] uppercase font-bold">Produttore (+${formatNum(b.productionRate)}) <img src="img/${b.resourceType}.png" alt="${b.resourceType}" title="${b.resourceType}" class="inline-flex w-4 h-4 object-contain"></span>`;
 
 
         } else {
             typeBadge = `<span class="inline-flex items-center gap-1 bg-purple-500/10 border border-purple-500/20 text-purple-500 px-2 py-0.5 rounded text-[9px] uppercase font-bold">Consuma `;
             for (let i = 0; i < b.rate.length; i++) {
-                typeBadge += `<span class="inline-flex items-center gap-0.5"><span>${b.rate[i]}</span><img src="img/${b.resourceType[i]}.png" alt="${b.resourceType[i]}" class="w-4 h-4 object-contain"></span>`;
+                typeBadge += `<span class="inline-flex items-center gap-0.5"><span>${b.rate[i]}</span><img src="img/${b.resourceType[i]}.png" alt="${b.resourceType[i]}" title="${b.resourceType[i]}"  class="w-4 h-4 object-contain"></span>`;
             }
             typeBadge += '</span>';
         }
@@ -192,7 +257,7 @@ function renderBuildingList(buildings) {
         card.className = `bg-slate-950 border ${isChecked ? 'border-slate-850' : 'border-slate-900 opacity-60'} p-3.5 rounded-xl space-y-2 relative overflow-hidden group hover:border-slate-700 transition-colors`;
         let costPanel = '';
         for (let k in b.cost) {
-            costPanel += '<span class="inline-flex">' + b.cost[k] + '</span><img class="inline-flex w-4 h-4 object-contain" src="img/' + k + '.png" alt="' + k + '" style="margin: 0 0.5rem;">';
+            costPanel += '<span class="inline-flex">' + b.cost[k] + '</span><img class="inline-flex w-4 h-4 object-contain" src="img/' + k + '.png" alt="' + k + '" title="' + k + '" style="margin: 0 0.5rem;">';
         }
         card.innerHTML = `
                     <div class="flex justify-between items-start">
@@ -261,7 +326,7 @@ function renderSandboxSliders(buildings, freePop) {
     const colony = colonyActive;
 
     buildings.forEach(b => {
-        let val=0;
+        let val = 0;
         if (colony.planned) val = colony.planned[b.id] || 0;
         const maxVal = Math.max(10, Math.floor(freePop / b.popReq));
 
@@ -287,7 +352,7 @@ function renderSandboxSliders(buildings, freePop) {
 
 // Sync visual sliders with the numerical value inputs
 function syncSandboxCounts(bId, source) {
-    
+
     if (!colonyActive) return;
 
     const slider = document.getElementById(`sandboxSl_${bId}`);
