@@ -1,8 +1,23 @@
 class colony {
     depositRate={}
     buildings = [];
-    popTot = 500;
-    popOcc = 100;
+    set popTot(value) {
+        this._popTot=value;
+        this.freePop=this._popTot-this._popOcc;
+    }
+    get popTot() {
+        return this._pop;
+    }
+    set popOcc(value) {
+        this._popOcc=value;
+        this.freePop=this._popTot-this._popOcc;
+    }
+    get popOcc() {
+        return this._popOcc;
+    }
+    _popTot = 500;
+    _popOcc = 100;
+    freePop = 400;
     name = "";
     planned={};
     /**

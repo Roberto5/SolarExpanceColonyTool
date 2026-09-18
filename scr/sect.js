@@ -188,7 +188,6 @@ function calculateAll(rebuildDOM = false) {
     }
     hudPopImpiegata.textContent = ""+result.occupiedPopulation;
     hudPopLiberaTot.textContent = freePop;
-    let width = 0;
     if (rebuildDOM) {
         renderBuildingList(buildings);
         renderSandboxSliders(buildings, freePop);
@@ -560,4 +559,9 @@ function deleteBuilding(id) {
         calculateAll(true);
         triggerToast(`Edificio '${bName}' rimosso`, "red");
     }
+}
+
+//calcolo numero edifici ottimali
+function calculateOptimalBuildings(colony) {
+
 }
