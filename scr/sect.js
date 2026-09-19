@@ -359,7 +359,7 @@ function renderSandboxSliders(buildings, freePop) {
                         <span class="text-xs font-semibold text-slate-200 flex items-center gap-1.5 truncate max-w-[170px]">
                             <img src="img/${res}.png" alt="${res}" title="${res}">
                         </span>
-                        <input type="number" id="priorityIn_${res}" value="${val}" min="0" class="w-14 bg-slate-950 border border-slate-800 rounded px-1 py-0.5 text-center text-xs font-mono text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500" oninput="syncPriorityCounts('${res}', 'input')">
+                        <input type="number" id="priorityIn_${res}" value="${val}" min="0" max="100" class="w-14 bg-slate-950 border border-slate-800 rounded px-1 py-0.5 text-center text-xs font-mono text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500" oninput="syncPriorityCounts('${res}', 'input')">
                     </div>
                     <input type="range" id="prioritySl_${res}" min="0" max="100" value="${val}" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500" oninput="syncPriorityCounts('${res}', 'slider')">
                     
@@ -376,9 +376,17 @@ function syncPriorityCounts(bId, source, redisrtibuite = false) {
     let val = 0;
     if (source === 'slider') {
         val = parseInt(slider.value) || 0;
+        if (val>100) {
+            val=100;
+            slider.value=100;
+        }
         input.value = val;
     } else {
         val = Math.max(0, parseInt(input.value) || 0);
+        if (val>100) {
+            val=100;
+            input.value=100;
+        }
         slider.value = val;
     }
     colonyActive.utilizationPopRate[bId] = val;

@@ -24,11 +24,13 @@ class deposit {
             this.resourceTypeSelector.disabled = true;
             this.depositRateInput.value = activeColony.depositRate[type] || '';
             this.removeButton.classList.remove('hidden');
+            this.changeImagePreview(type);
         } else {
             this.resourceTypeSelector.value = '';
             this.resourceTypeSelector.disabled = false;
             this.depositRateInput.value = '';
             this.removeButton.classList.add('hidden');
+            this.changeImagePreview(type);
         }
         this.modal.classList.remove('hidden');
     }

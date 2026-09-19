@@ -50,7 +50,7 @@
 
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-blue-600 selection:text-white">
 
-    
+
 
     <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
@@ -80,7 +80,8 @@
                         tecnologiche</span>
                     <div class="grid grid-cols-2 gap-2">
                         <div class="flex flex-col gap-1">
-                            <label for="laborReductionPercentage" class="text-[10px] text-slate-400 leading-none">Manodopera
+                            <label for="laborReductionPercentage"
+                                class="text-[10px] text-slate-400 leading-none">Manodopera
                                 (%)</label>
                             <div class="relative">
                                 <input id="laborReductionPercentage"
@@ -107,7 +108,8 @@
                 <div class="flex flex-wrap items-center gap-2 bg-slate-900/40 p-2 rounded-xl border border-slate-800">
                     <div class="flex items-start gap-3">
                         <div class="flex flex-col">
-                            <span class="text-[9px] uppercase font-bold text-slate-500 tracking-wider ml-1 mb-1">Seleziona
+                            <span
+                                class="text-[9px] uppercase font-bold text-slate-500 tracking-wider ml-1 mb-1">Seleziona
                                 Colonia</span>
                             <select id="colonySelector" onchange="loadColony()"
                                 class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[150px]">
@@ -129,7 +131,8 @@
                         <button onclick="openCreateColonyModal()" title="Crea Nuova Colonia"
                             class="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 p-2 rounded-lg transition">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v16m8-8H4" />
                             </svg>
                         </button>
                         <!-- Save Button -->
@@ -263,23 +266,24 @@
                         <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Bilancio Risorse
                             Netto</span>
                         <div id="productionHUD" class="w-full mt-2 overflow-hidden">
-                         
+
                         </div>
                     </div>
 
                     <!-- Budget Cost HUD -->
                     <div
                         class="bg-slate-900/40 border border-slate-900 rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden">
-                        <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Risorse necessarie</span>
+                        <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Risorse
+                            necessarie</span>
 
                         <div id="budgetCostHUD" class="space-y-2 mt-2 text-xs">
-                            
+
                         </div>
                     </div>
 
                 </div>
 
-                
+
 
                 <!-- Interactive Manual Sandbox Panel -->
                 <div class="bg-slate-900/60 border border-slate-900 rounded-2xl p-6 space-y-6">
@@ -307,38 +311,19 @@
                     </div>
                 </div>
                 <div class="bg-slate-900/60 border border-slate-900 rounded-2xl p-6">
-                    <h3 class="font-orbitron font-semibold text-sm tracking-wider uppercase text-slate-400 mb-4">
-                        priorità
-                    </h3>
-                    <button onclick="setPrioritySlider(redistribuite(colonyActive.utilizationPopRate),true)"
-                        class="text-xs text-slate-400 hover:text-white transition uppercase tracking-wider font-semibold bg-slate-950 px-2.5 py-1 rounded border border-slate-850">
-                        Redistribuisci la popolazione <span id="popLeft"></span>
-                    </button>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-orbitron font-semibold text-sm tracking-wider uppercase text-slate-400">
+                            priorità
+                        </h3>
+                        <div class="flex justify-end">
+                            <button onclick="setPrioritySlider(redistribuite(colonyActive.utilizationPopRate),true)"
+                                class="text-xs text-slate-400 hover:text-white transition uppercase tracking-wider font-semibold bg-slate-950 px-2.5 py-1 rounded border border-slate-850">
+                                Redistribuisci la popolazione <span id="popLeft"></span>
+                            </button>
+                        </div>
+                    </div>
                     <div id="priority">
 
-                    </div>
-                </div>
-                <!-- Local Colonization Database -->
-                <div class="bg-slate-900/60 border border-slate-900 rounded-2xl p-6">
-                    <h3 class="font-orbitron font-semibold text-sm tracking-wider uppercase text-slate-400 mb-4">
-                        Database Colonie Archiviate</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs border-collapse">
-                            <thead>
-                                <tr class="text-slate-400 border-b border-slate-800">
-                                    <th class="pb-3 font-semibold uppercase tracking-wider">Nome Colonia</th>
-                                    <th class="pb-3 font-semibold uppercase tracking-wider">Pop. Totale (Libera)</th>
-                                    <th class="pb-3 font-semibold uppercase tracking-wider">Configurazione Edifici</th>
-                                    <th class="pb-3 font-semibold uppercase tracking-wider">Piano Sandbox</th>
-                                    <th class="pb-3 font-semibold uppercase tracking-wider">Costo Costruzione (M / L)
-                                    </th>
-                                    <th class="pb-3 text-right">Azioni</th>
-                                </tr>
-                            </thead>
-                            <tbody id="colonyDatabaseBody" class="divide-y divide-slate-800 text-slate-300 font-mono">
-                                <!-- Generato dinamicamente -->
-                            </tbody>
-                        </table>
                     </div>
                 </div>
 
