@@ -252,3 +252,11 @@ function maxObj(obj, compareFn) {
 
     return maxKey;
 }
+function selectHelper(select) {
+    const input = document.getElementById('production');
+    if (defaultBuilding[select.value].type=="producer") {
+        
+        input.classList.remove("hidden");
+    }
+    else input.classList.add("hidden");
+}

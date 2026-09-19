@@ -50,8 +50,8 @@ let defaultBuilding = {
         type: "producer",
         popReq: 5,
         cost: { iron: 125 },
-        production: 0.88,
-        productionRate: 0.88,
+        production: 1.8,
+        productionRate: 1.8,
         selected: true,
         resourceType: "iron"
     }, CarbonMine: {
@@ -138,8 +138,8 @@ let defaultBuilding = {
         id: "RareMetalMine",
         name: "Miniera di metalli rari",
         type: "producer", popReq: 5,
-        production: 0.12,
-        productionRate: 0.12,
+        production: 1.75,
+        productionRate: 1.75,
         cost: { iron: 125 },
         selected: true,
         resourceType: "rareMetal"
@@ -148,8 +148,8 @@ let defaultBuilding = {
         id: "FissileMine",
         name: "Miniera di materiale fissile",
         type: "producer", popReq: 10,
-        production: 0.03,
-        productionRate: 0.03,
+        production: 1,
+        productionRate: 1,
         cost: { iron: 125 },
         selected: true,
         resourceType: "fissile"

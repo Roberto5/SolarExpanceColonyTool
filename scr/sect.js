@@ -587,15 +587,30 @@ function deleteColony(name) {
 }
 
 // ********************* Building Modals Logic ******************
-function openBuildingModal() {
+function openBuildingModal(id="") {
     const modal = document.getElementById('buildingModal');
+    const input=document.getElementById('production');
+    const select = document.getElementById('defaultBuildingSelector');
+    if (id!="") {
+        input.value=colonyActive.buildings.find(b=>b.id==id).production;
+        select.value=id;
+        //disabilito il select
+        select.disabled=true;
+    }
+    else {
+        select.value="";
+        //abilito il select
+        select.disabled=false;
+        input.value="1";
+    }
     modal.classList.remove('hidden');
 }
 // Adds or updates a building in the current active colony
 function saveBuilding() {
-    const colony = database.colonies.find(c => c.name === activeColonyKey);
+    
     const select = document.getElementById('defaultBuildingSelector');
-    if (!colony) {
+    const input = document.getElementById('production');
+    if (!colonyActive) {
         triggerToast("Colonia non trovata", "red");
         return;
     }
@@ -603,9 +618,23 @@ function saveBuilding() {
         triggerToast("Selettore edificio non trovato", "red");
         return;
     }
-    if (colonyActive.buildings.findIndex(b => b.id == defaultBuilding[select.value]) == -1) {
-        colony.addBuilding(defaultBuilding[select.value]);
+    if (colonyActive.buildings.findIndex(b => b.id == select.value) == -1) {
+        let b=defaultBuilding[select.value];
+        if (b.type=="producer") {
+            b.production=parseInputFloat(input.value);
+            b.productionRate=parseInputFloat(input.value);
+        }
+        colonyActive.addBuilding(b);
+        
         triggerToast("edificio aggiunto");
+    }
+    else {
+        let b=colonyActive.buildings.find(b => b.id == select.value);
+        if (b.type=="producer") {
+            b.production=parseInputFloat(input.value);
+            b.productionRate=parseInputFloat(input.value);
+        }
+        triggerToast("edificio aggiornato");
     }
     saveToLocalStorage();
     closeBuildingModal();
