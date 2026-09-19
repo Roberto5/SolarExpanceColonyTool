@@ -303,10 +303,12 @@
                             <p class="text-[10px] text-slate-400">Simula il numero preciso di edifici per valutarne
                                 costi ed efficacia.</p>
                         </div>
-                        <button onclick="setOptimalNumbers();"
-                            class="text-xs text-slate-400 hover:text-white transition uppercase tracking-wider font-semibold bg-slate-950 px-2.5 py-1 rounded border border-slate-850">
+                        <label for="optimalNumbersCheckbox"
+                            class="inline-block text-xs text-slate-400 hover:text-white transition uppercase tracking-wider font-semibold bg-slate-950 px-2.5 py-1 rounded border border-slate-850">
+                            <input id="optimalNumbersCheckbox" type="checkbox" class="sr-only"
+                                onchange="optimalchecked=this.checked;this.parentElement.classList.toggle('bg-purple-900/60', this.checked); this.parentElement.classList.toggle('text-purple-200', this.checked); if (this.checked) setOptimalNumbers();">
                             Imposta numeri ottimali
-                        </button>
+                        </label>
                         <button id="resetSandboxBtn" onclick="resetSandbox()"
                             class="text-xs text-slate-400 hover:text-white transition uppercase tracking-wider font-semibold bg-slate-950 px-2.5 py-1 rounded border border-slate-850">
                             Reset Sliders

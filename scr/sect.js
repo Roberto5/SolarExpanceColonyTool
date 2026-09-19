@@ -8,6 +8,7 @@ let reductionPop = 0;
 let reductionCost = 0;
 let colonyActive;
 let resList = [];
+let optimalchecked=false;
 const resourcesTypes = [
     "silicon",
     "iron",
@@ -77,9 +78,16 @@ window.onload = function () {
 };
 
 // Main orchestration driver. Pass rebuildDOM = true to rebuild HTML cards/sliders, false to preserve input focus
-//@todo rifare i calcoli
+
 function calculateAll(rebuildDOM = false) {
     //calculate free population
+    colonyActive.optimal = calculateOptimalBuildings(colonyActive);
+    if (optimalchecked) {
+        colonyActive.planned = colonyActive.optimal;
+        for(let i in colonyActive.planned) {
+            setSlider(i, colonyActive.planned[i],false);
+        }
+    }
     const popTotale = parseInt(document.getElementById('popTotale').value) || 0;
     const popOccupata = parseInt(document.getElementById('popOccupata').value) || 0;
     const freePop = Math.max(0, popTotale - popOccupata);
@@ -193,18 +201,17 @@ function calculateAll(rebuildDOM = false) {
     hudPopImpiegata.textContent = "" + result.occupiedPopulation;
     hudPopLiberaTot.textContent = freePop;
 
-    result = calculateOptimalBuildings(colonyActive);
-    colonyActive.optimal = result;
-
+    
     if (rebuildDOM) {
         renderBuildingList(buildings);
         renderSandboxSliders(buildings, freePop);
         populateResourceList();
     }
+    
     let spanTip;
-    for (let key in result) {
+    for (let key in colonyActive.optimal) {
         spanTip = document.getElementById("spanTip" + key);
-        if (spanTip) spanTip.textContent = result[key];
+        if (spanTip) spanTip.textContent = colonyActive.optimal[key];
     }
 
     let popLeft = 100-sumObj(colonyActive.utilizationPopRate);
@@ -335,11 +342,15 @@ function renderSandboxSliders(buildings, freePop) {
                             <span class="w-2 h-2 rounded-full ${b.type === 'producer' ? 'bg-amber-500' : 'bg-purple-500'}"></span>
                             ${b.name}
                         </span>
-                        <input type="number" id="sandboxIn_${b.id}" value="${val}" min="0" class="w-14 bg-slate-950 border border-slate-800 rounded px-1 py-0.5 text-center text-xs font-mono text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500" oninput="syncSandboxCounts('${b.id}', 'input')">
+                        <input type="number" id="sandboxIn_${b.id}" value="${val}" min="0" class="w-14 bg-slate-950 border border-slate-800 rounded px-1 py-0.5 text-center text-xs font-mono text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                            oninput="document.getElementById('optimalNumbersCheckbox').checked = false;document.getElementById('optimalNumbersCheckbox').dispatchEvent(new Event('change'));syncSandboxCounts('${b.id}', 'input');">
                     </div>
-                    <input type="range" id="sandboxSl_${b.id}" min="0" max="${maxVal}" value="${val}" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500" oninput="syncSandboxCounts('${b.id}', 'slider')">
+                    <input type="range" id="sandboxSl_${b.id}" min="0" max="${maxVal}" value="${val}" 
+                        class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500" 
+                        oninput="document.getElementById('optimalNumbersCheckbox').checked = false;document.getElementById('optimalNumbersCheckbox').dispatchEvent(new Event('change'));syncSandboxCounts('${b.id}', 'slider');">
                     <div class="flex justify-between text-[9px] text-slate-500">
-                        <span id="spanTip${b.id}" onclick="setSlider('${b.id}',this.innerText);" class="cursor-pointer">0</span>
+                        <span id="spanTip${b.id}" onclick="document.getElementById('optimalNumbersCheckbox').checked = false;document.getElementById('optimalNumbersCheckbox').dispatchEvent(new Event('change'));setSlider('${b.id}',this.innerText);" 
+                        class="cursor-pointer">${colonyActive.optimal[b.id]}</span>
                         <span>Max Calcolato: ${Math.floor(freePop / b.popReq)}</span>
                     </div>
                 `;
@@ -723,7 +734,7 @@ function calculateOptimalBuildings(colony) {
                 }
             }
             if (opetation++ > 10000) {
-                throw new Error("infinity loop");//@todo triggerato infitini loop, indagare
+                throw new Error("infinity loop");
 
             }
         }
@@ -771,4 +782,3 @@ function calcProduction(b, result, res) {
     }
     return prod;
 }
-//@todo add delete colony

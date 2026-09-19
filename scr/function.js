@@ -174,10 +174,20 @@ function triggerToast(message, type = 'blue') {
         toast.classList.remove('translate-y-0', 'opacity-100');
     }, 3000);
 }
-function setSlider(id, value) {
-    const slider = document.getElementById("sandboxIn_" + id);
-    slider.value = value;
-    syncSandboxCounts(id, 'input');
+/**
+ * sets the value of a slider and syncs the slider value with the sandbox count
+ * @param {text} id 
+ * @param {int} value 
+ */
+function setSlider(id, value, calc=false) {
+    
+    const slider = document.getElementById(`sandboxSl_${id}`);
+    const input = document.getElementById(`sandboxIn_${id}`);
+    if (slider) slider.value = value;
+    if (input) input.value = value;
+    
+    if (calc) calculateAll();
+    saveToLocalStorage();
 }
 function setOptimalNumbers() {
     colonyActive.planned = colonyActive.optimal;
