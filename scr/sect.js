@@ -7,7 +7,7 @@ let depositModal;
 let reductionPop = 0;
 let reductionCost = 0;
 let colonyActive;
-let resList=[];
+let resList = [];
 const resourcesTypes = [
     "silicon",
     "iron",
@@ -36,6 +36,9 @@ window.onload = function () {
         database.reduction = databaseTemp.reduction;
         for (const c of databaseTemp.colonies) {
             const newColony = new colony(c.name, c.buildings.map(b => new building(b)), c.depositRate);
+            newColony.utilizationPopRate=c.utilizationPopRate;
+            newColony.popOcc=c._popOcc;
+            newColony.popTot=c._popTot;
             database.colonies.push(newColony);
         }
     } else {
@@ -191,7 +194,7 @@ function calculateAll(rebuildDOM = false) {
     hudPopLiberaTot.textContent = freePop;
 
     result = calculateOptimalBuildings(colonyActive);
-    colonyActive.optimal=result;
+    colonyActive.optimal = result;
 
     if (rebuildDOM) {
         renderBuildingList(buildings);
@@ -200,9 +203,13 @@ function calculateAll(rebuildDOM = false) {
     }
     let spanTip;
     for (let key in result) {
-        spanTip=document.getElementById("spanTip"+key);
-        if (spanTip) spanTip.textContent=result[key];
+        spanTip = document.getElementById("spanTip" + key);
+        if (spanTip) spanTip.textContent = result[key];
     }
+
+    let popLeft = 100-sumObj(colonyActive.utilizationPopRate);
+    let SpanPopLeft = document.getElementById("popLeft");
+    if (SpanPopLeft) SpanPopLeft.innerText =popLeft;
     saveToLocalStorage();
 }
 
@@ -309,13 +316,13 @@ function renderSandboxSliders(buildings, freePop) {
         container.innerHTML = `<div class="col-span-2 text-center text-slate-500 text-xs py-4">Nessun edificio registrato. Creane uno per configurare il Sandbox.</div>`;
         return;
     }
-
+    resList = [];
     const colony = colonyActive;
     buildings.forEach(b => {
-        if (b.type=="producer") {
-            if (resList.findIndex(x=>x==b.resourceType)==-1) resList.push(b.resourceType);
+        if (b.type == "producer") {
+            if (resList.findIndex(x => x == b.resourceType) == -1) resList.push(b.resourceType);
         }
-        
+
         let val = 0;
         if (colony.planned) val = colony.planned[b.id] || 0;
         const maxVal = Math.max(10, Math.floor(freePop / b.popReq));
@@ -339,13 +346,12 @@ function renderSandboxSliders(buildings, freePop) {
         container.appendChild(block);
     });
     //rendere priority
-    let priority=document.getElementById('priority');
-    priority.innerHTML="";
+    let priority = document.getElementById('priority');
+    priority.innerHTML = "";
     resList.forEach((res) => {
-        let val =0;
-        if (colony.utilizationPopRate[res]) {
-            val=colony.utilizationPopRate[res];
-        }
+        let val = 0;
+        val = colony.getUtilizationPopRate(res);
+
         const block = document.createElement('div');
         block.className = "space-y-2 bg-slate-950/40 border border-slate-900 p-3 rounded-xl";
         block.innerHTML = `
@@ -359,11 +365,11 @@ function renderSandboxSliders(buildings, freePop) {
                     
                 `;
         priority.appendChild(block);
-    
+
     });
 
 }
-function syncPriorityCounts(bId, source) {
+function syncPriorityCounts(bId, source, redisrtibuite = false) {
     if (!colonyActive) return;
     const slider = document.getElementById(`prioritySl_${bId}`);
     const input = document.getElementById(`priorityIn_${bId}`);
@@ -376,28 +382,67 @@ function syncPriorityCounts(bId, source) {
         slider.value = val;
     }
     colonyActive.utilizationPopRate[bId] = val;
-    let remain=100-val;
-    let totP=val;
-    for (let i=0;i<resList.length;i++){
-        if (resList[i]!=bId) {
-            let value=Math.floor(remain/((resList.length)-1));
-            totP+=value;
-            colonyActive.utilizationPopRate[resList[i]] = value;
-            let tempS = document.getElementById(`prioritySl_${resList[i]}`);
-            let tempI = document.getElementById(`priorityIn_${resList[i]}`);
-            tempS.value = value;
-            tempI.value = value;
+    if (redisrtibuite) {
+        colonyActive.utilizationPopRate = redisrtibuite(moveKeyToStart(colonyActive.utilizationPopRate, bId));
+        setPrioritySlider(colonyActive.utilizationPopRate);
+    }
+    else {
+        let totp = sumObj(colonyActive.utilizationPopRate);
+        let filtered = Object.fromEntries(
+            Object.entries(colonyActive.utilizationPopRate)
+                .filter(([key]) => key !== bId));
+        if (totp > 100) { //controllo over flow
+            let of = totp - 100;
+            let key = maxObj(filtered, (a, b) => a > b);
+            colonyActive.utilizationPopRate[key] -= of;
+            let temps = document.getElementById(`prioritySl_${key}`);
+            if (temps) temps.value = colonyActive.getUtilizationPopRate(key);
+            let tempi = document.getElementById(`priorityIn_${key}`);
+            if (tempi) tempi.value = colonyActive.getUtilizationPopRate(key);
         }
     }
-    if (totP<100) {
-        colonyActive.utilizationPopRate[resList[resList.length-1]]+=100-totP;
-        let tempS = document.getElementById(`prioritySl_${resList[resList.length-1]}`);
-            let tempI = document.getElementById(`priorityIn_${resList[resList.length-1]}`);
-            tempS.value = value;
-            tempI.value = value;
-    }
+    
     saveToLocalStorage();
     calculateAll();
+}
+/**
+ * 
+ * @param {object} slider {resource:vale,...}
+ */
+function setPrioritySlider(slider,save=false) {
+    for (let s in slider) {
+        temp = document.getElementById(`prioritySl_${s}`);
+        if (temp) temp.value = slider[s];
+        temp = document.getElementById(`priorityIn_${s}`);
+        if (temp) temp.value = slider[s];
+    }
+    if(save) {
+        colonyActive.utilizationPopRate = slider;
+        saveToLocalStorage();
+        calculateAll();
+    }
+}
+/**
+ * 
+ * @param {object} slider {resource:vale,...}
+ * return {object} slider {resource:vale,...}
+ */
+function redistribuite(slider) {
+    let result = slider;
+    let total = sumObj(slider);
+    let dif = 100-total;
+    let n= Object.keys(slider).length;
+    let last="";
+    if (dif != 0) {
+        for (let v in result) {
+            last=v;
+            result[v]+=parseInt(dif/n);
+        }
+        if (dif % n != 0) {
+            result[last]+=dif % n;
+        }
+    }
+    return result;
 }
 // Sync visual sliders with the numerical value inputs
 function syncSandboxCounts(bId, source) {
@@ -539,72 +584,10 @@ function saveBuilding() {
         triggerToast("Selettore edificio non trovato", "red");
         return;
     }
-    colony.addBuilding(defaultBuilding[select.value]);
-    triggerToast("edificio aggiunto");
-    /* @todo rimuovi se inutile
-    const editId = document.getElementById('editBuildingId').value;
-    const bName = document.getElementById('bName').value.trim();
-    const bType = document.getElementById('bType').value;
-    const bPopReq = parseInt(document.getElementById('bPopReq').value) || 1;
-
-    const bCostMetal = parseInputFloat(document.getElementById('bCostMetal').value);
-    const bCostAlloy = parseInputFloat(document.getElementById('bCostAlloy').value);
-
-    let bRate = 0;
-    let bProdTotale = undefined;
-    let bNumMiniere = undefined;
-
-    if (bType === 'producer') {
-        bProdTotale = parseInputFloat(document.getElementById('bProdTotale').value);
-        bNumMiniere = parseInt(document.getElementById('bNumMiniere').value) || 1;
-        bRate = bNumMiniere > 0 ? (bProdTotale / bNumMiniere) : 0;
-    } else {
-        bRate = parseInputFloat(document.getElementById('bRate').value);
+    if (colonyActive.buildings.findIndex(b => b.id == defaultBuilding[select.value]) == -1) {
+        colony.addBuilding(defaultBuilding[select.value]);
+        triggerToast("edificio aggiunto");
     }
-
-    if (!bName) {
-        triggerToast("Inserisci un nome per l'edificio", "red");
-        return;
-    }
-
-    if (editId) {
-        // Edit existing building inside array
-        const index = colony.buildings.findIndex(b => b.id === editId);
-        if (index !== -1) {
-            colony.buildings[index] = {
-                id: editId,
-                name: bName,
-                type: bType,
-                popReq: bPopReq,
-                rate: bRate,
-                prodTotale: bProdTotale,
-                numMiniere: bNumMiniere,
-                costMetal: bCostMetal,
-                costAlloy: bCostAlloy,
-                selected: colony.buildings[index].selected !== false // preserve selection state
-            };
-        }
-        triggerToast(`Edificio '${bName}' aggiornato!`, "emerald");
-    } else {
-        // Create unique ID
-        const newId = "b_" + Date.now();
-        colony.buildings.push({
-            id: newId,
-            name: bName,
-            type: bType,
-            popReq: bPopReq,
-            rate: bRate,
-            prodTotale: bProdTotale,
-            numMiniere: bNumMiniere,
-            costMetal: bCostMetal,
-            costAlloy: bCostAlloy,
-            selected: true // Enabled by default on creation
-        });
-        // Initialize default planned count
-        colony.planned[newId] = 0;
-        triggerToast(`Edificio '${bName}' inserito nel registro!`, "emerald");
-    }
-//*/
     saveToLocalStorage();
     closeBuildingModal();
     calculateAll(true);
@@ -617,7 +600,7 @@ function editBuilding(id) {
 
 // Deletes building from colony registry and planned counts
 function deleteBuilding(id) {
-    
+
     if (!colonyActive) return;
 
     const index = colonyActive.buildings.findIndex(b => b.id === id);
@@ -668,15 +651,16 @@ function calculateOptimalBuildings(colony) {
     colony.buildings.forEach(building => {
         result[building.id] = 0;
     });
+    let res = Object.keys(buildings);
     // cobntrollo che la somma dei rating sia 100
     let totpoprate = 0;
-    for (const v in colony.utilizationPopRate) {
-        totpoprate += colony.utilizationPopRate[v];
+    for (const v of res) {
+        totpoprate += colony.getUtilizationPopRate(v);
     }
-    if (totpoprate != 100) { // altrimenti 
+    if (totpoprate > 100) { // altrimenti 
         //divido in parti uguali
         colony.utilizationPopRate = {};
-        let res = Object.keys(buildings);
+
         let d = parseInt(100 / res.length);
         for (let i = 0; i < res.length; i++) {
             colony.utilizationPopRate[res[i]] = d;
@@ -686,11 +670,11 @@ function calculateOptimalBuildings(colony) {
     }
     //ciclo principare per ogni risorsa
     for (const resourceType in buildings) {
-        let b=buildings[resourceType];
+        let b = buildings[resourceType];
         let mine = b.filter(v => v.type == "producer"); mine = mine[0];
         let factory = b.filter(v => v.type == "consumer");
         let end = false;
-        let popAvailable = Math.floor(colony.freePop * colony.utilizationPopRate[resourceType] / 100);
+        let popAvailable = Math.floor(colony.freePop * colony.getUtilizationPopRate(resourceType) / 100);
         let production = 0;
         let popUsed = 0;
         let last = {};
@@ -704,35 +688,35 @@ function calculateOptimalBuildings(colony) {
          * 5 se la produzione va in negativo vado al punto 1
          * 6 se la pop finisce diminuisco e esco
          */
-        let opetation=0;
+        let opetation = 0;
         while (!end) {
             result[mine.id]++;
-            production = calcProduction(b, result,resourceType);
+            production = calcProduction(b, result, resourceType);
             popUsed = calcPop(b, result);
             if (popUsed > popAvailable) {
                 result[mine.id]--;
-                end=true;
+                end = true;
                 break;
             }
             //aumento fabriche
-            while ((production >= 0) && (factory.length>0)) {
+            while ((production >= 0) && (factory.length > 0)) {
                 pointer = calcMin(factory, result);
                 result[pointer]++;
-                production = calcProduction(b, result,resourceType);
+                production = calcProduction(b, result, resourceType);
                 popUsed = calcPop(b, result);
                 if (popUsed > popAvailable) {
                     result[pointer]--;
-                    end=true;
+                    end = true;
                     break;
                 }
-                if (opetation++>10000) {
-                throw new Error("infinity loop");
-                
+                if (opetation++ > 10000) {
+                    throw new Error("infinity loop");
+
+                }
             }
-            }
-            if (opetation++>10000) {
+            if (opetation++ > 10000) {
                 throw new Error("infinity loop");//@todo triggerato infitini loop, indagare
-                
+
             }
         }
     }
@@ -766,16 +750,17 @@ function calcPop(b, result) {
     }
     return pop;
 }
-function calcProduction(b, result,res) {
+function calcProduction(b, result, res) {
     let prod = 0;
     for (const v of b) {
         if (v.type == "producer") {
             prod += v.productionRate * result[v.id];
         }
         else {
-            let i=v.resourceType.findIndex(r => r == res)
+            let i = v.resourceType.findIndex(r => r == res)
             prod -= v.rate[i] * result[v.id];
         }
     }
     return prod;
 }
+//@todo add delete colony

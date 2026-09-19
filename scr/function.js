@@ -54,7 +54,7 @@ function loadColonyDirectly(name) {
     const data = database.colonies.find(c => c.name === name);
     if (!data) return;
     activeColonyKey = name;
-    colonyActive=database.colonies.find(c=>c.name===name);
+    colonyActive = database.colonies.find(c => c.name === name);
     saveToLocalStorage();
 
 
@@ -65,7 +65,7 @@ function loadColonyDirectly(name) {
 
     // Keep Colony selector in sync
     document.getElementById('colonySelector').value = name;
-    
+
     calculateAll(true);// TODO rifare i calcoli
     triggerToast(`Colonia caricata: ${name}`, "blue");
 }
@@ -130,7 +130,7 @@ function populateResourceselector() {
         option.textContent = resourcesTypes[key];
         selector.appendChild(option);
     });
-}   
+}
 
 function populateResourceList() {
     activeColony = database.colonies.find(c => c.name === activeColonyKey);
@@ -148,7 +148,7 @@ function populateResourceList() {
             //remove item from depositRate
             // prendo il type dal attributo alt dell'immagine
             let img = resourceItem.querySelector('img');
-            let type = img.getAttribute('alt'); 
+            let type = img.getAttribute('alt');
             depositModal.open(true, type);
         });
         resourceListContainer.appendChild(resourceItem);
@@ -175,11 +175,70 @@ function triggerToast(message, type = 'blue') {
     }, 3000);
 }
 function setSlider(id, value) {
-    const slider=document.getElementById("sandboxIn_"+id);
-    slider.value=value;
+    const slider = document.getElementById("sandboxIn_" + id);
+    slider.value = value;
     syncSandboxCounts(id, 'input');
 }
 function setOptimalNumbers() {
-    colonyActive.planned=colonyActive.optimal;
+    colonyActive.planned = colonyActive.optimal;
     calculateAll(true);
+}
+/**
+ * sum all values in an object
+ * @param
+ * @param {object} obj 
+ * @returns integer
+ */
+function sumObj(obj) {
+    let sum = 0;
+    for (let i in obj) {
+        sum += parseInt(obj[i]) || 0;
+    }
+    return sum;
+}
+/**
+ * move a key to the start of an object
+ * @param {object} obj 
+ * @param {string} key 
+ * @returns object
+ */
+function moveKeyToStart(obj, key) {
+    // Crea un nuovo oggetto vuoto
+    const newObj = {};
+
+    // Aggiungi la chiave specificata all'inizio
+    if (obj.hasOwnProperty(key)) {
+        newObj[key] = obj[key];
+    }
+
+    // Aggiungi le altre chiavi
+    for (const k of Object.keys(obj)) {
+        if (k !== key) {
+            newObj[k] = obj[k];
+        }
+    }
+
+    return newObj;
+}
+/**
+ * return a key of the max value
+ * @param {object} obj 
+ * @param {function} compareFn - function to compare values
+    *
+ }} compareFn 
+ * return string
+ */
+function maxObj(obj, compareFn) {
+    let maxKey = Object.keys(obj)[0];
+    let maxValue = obj[maxKey];
+
+    for (const key in obj) {
+        const value = obj[key];
+        if (compareFn(value, maxValue)) {
+            maxValue = value;
+            maxKey = key;
+        }
+    }
+
+    return maxKey;
 }
