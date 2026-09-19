@@ -1,6 +1,6 @@
 
 // Global State & Database Structure
-const DATABASE_NAME = 'solar_expanse_v4';
+const DATABASE_NAME = 'solar_expanse_v5';
 let database = {};
 let activeColonyKey = "";
 let depositModal;
