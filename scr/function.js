@@ -119,42 +119,9 @@ function closeBuildingModal() {
     document.getElementById('buildingModal').classList.add('hidden');
 }
 
-// Popola il selettore di tipi di risorsa 
-function populateResourceselector() {
-    const selector = document.getElementById('resourceTypeSelector');
-    selector.innerHTML = '<option value="">Seleziona un tipo di risorsa</option>';
 
-    Object.keys(resourcesTypes).forEach(key => {
-        const option = document.createElement('option');
-        option.value = resourcesTypes[key];
-        option.textContent = resourcesTypes[key];
-        selector.appendChild(option);
-    });
-}
 
-function populateResourceList() {
-    activeColony = database.colonies.find(c => c.name === activeColonyKey);
-    const resourceListContainer = document.getElementById('resourceListContainer');
-    resourceListContainer.innerHTML = ''; // Clear existing items
-    for (const [type, rate] of Object.entries(activeColony.depositRate)) {
-        const resourceItem = document.createElement('div');
-        resourceItem.className = 'flex w-14 shrink-0 cursor-pointer flex-col items-center justify-center bg-slate-800 rounded-lg p-2';
-        resourceItem.innerHTML = `
-            <img src="img/${type}.png" alt="${type}" title="${type}"  class="w-10 h-10 object-contain">
-            <span class="text-slate-400 text-xs mt-1">${rate}</span>
-        `;
-        resourceItem.addEventListener('click', () => {
 
-            //remove item from depositRate
-            // prendo il type dal attributo alt dell'immagine
-            let img = resourceItem.querySelector('img');
-            let type = img.getAttribute('alt');
-            depositModal.open(true, type);
-        });
-        resourceListContainer.appendChild(resourceItem);
-    }
-
-}
 
 // Toast visual feedback notifier
 function triggerToast(message, type = 'blue') {

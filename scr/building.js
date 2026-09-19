@@ -4,7 +4,6 @@ class building {
     type;
     popReq;
     production;
-    productionRate;
     rate;
     cost;
     selected;
@@ -38,7 +37,6 @@ let defaultBuilding = {
         name: "Miniera di silicio",
         type: "producer",
         production: 0.62,
-        productionRate: 0.62,
         popReq: 5,
         selected: true,
         cost: { iron: 125 },
@@ -51,7 +49,6 @@ let defaultBuilding = {
         popReq: 5,
         cost: { iron: 125 },
         production: 1.8,
-        productionRate: 1.8,
         selected: true,
         resourceType: "iron"
     }, CarbonMine: {
@@ -59,7 +56,6 @@ let defaultBuilding = {
         name: "Miniera di carbonio",
         type: "producer", popReq: 5,
         production: 0.01,
-        productionRate: 0.01,
         cost: { iron: 125 },
         selected: true,
         resourceType: "carbon"
@@ -69,7 +65,6 @@ let defaultBuilding = {
         name: "Miniera di acqua",
         type: "producer", popReq: 5,
         production: 0.62,
-        productionRate: 0.62,
         cost: { iron: 125 },
         selected: true,
         resourceType: "water"
@@ -79,7 +74,6 @@ let defaultBuilding = {
         name: "Miniera di gas nobili",
         type: "producer", popReq: 5,
         production: 0.12,
-        productionRate: 0.12,
         cost: { iron: 125 },
         selected: true,
         resourceType: "noble"
@@ -89,7 +83,6 @@ let defaultBuilding = {
         name: "Miniera di azoto",
         type: "producer", popReq: 5,
         production: 0.01,
-        productionRate: 0.01,
         cost: { iron: 125 },
         selected: true,
         resourceType: "nitrogen"
@@ -99,7 +92,6 @@ let defaultBuilding = {
         name: "Miniera di ossigeno",
         type: "producer", popReq: 5,
         production: 0.12,
-        productionRate: 0.12,
         cost: { iron: 125 },
         selected: true,
         resourceType: "oxygen"
@@ -109,7 +101,6 @@ let defaultBuilding = {
         name: "Miniera di CO2",
         type: "producer", popReq: 5,
         production: 0.01,
-        productionRate: 0.01,
         cost: { iron: 125 },
         selected: true,
         resourceType: "co2"
@@ -119,7 +110,6 @@ let defaultBuilding = {
         name: "Miniera di carburante",
         type: "producer", popReq: 5,
         production: 0.01,
-        productionRate: 0.01,
         cost: { iron: 125 },
         selected: true,
         resourceType: "fuel"
@@ -128,8 +118,7 @@ let defaultBuilding = {
         id: "HydrogenMine",
         name: "Miniera di idrogeno",
         type: "producer", popReq: 5,
-        production: 0.01,//todo: controllare se il rate di produzione è corretto
-        productionRate: 0.01,
+        production: 0.01,
         cost: { iron: 125 },
         selected: true,
         resourceType: "hydrogen"
@@ -139,7 +128,6 @@ let defaultBuilding = {
         name: "Miniera di metalli rari",
         type: "producer", popReq: 5,
         production: 1.75,
-        productionRate: 1.75,
         cost: { iron: 125 },
         selected: true,
         resourceType: "rareMetal"
@@ -149,7 +137,6 @@ let defaultBuilding = {
         name: "Miniera di materiale fissile",
         type: "producer", popReq: 10,
         production: 1,
-        productionRate: 1,
         cost: { iron: 125 },
         selected: true,
         resourceType: "fissile"
@@ -159,7 +146,6 @@ let defaultBuilding = {
         name: "Miniera di elio-3",
         type: "producer", popReq: 20,
         production: 0.5,
-        productionRate: 0.5,
         cost: { iron: 125 },
         selected: true,
         resourceType: "elio3"

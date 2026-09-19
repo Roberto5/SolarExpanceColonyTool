@@ -7,7 +7,6 @@
     <title>Solar Expanse - Planner Industriale Dinamico</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="scr/modal/deposit.js"></script>
     <script src="scr/function.js"></script>
     <script src="scr/building.js"></script>
     <script src="scr/colony.js"></script>
@@ -202,23 +201,7 @@
                     </div>
 
 
-                    <!-- sezione risorse -->
-                    <div class="pt-4 border-t border-slate-800/60">
-                        <h4 class="font-orbitron font-semibold text-sm tracking-wider uppercase text-blue-400">2.
-                            Depositi di Risorse</h4>
-                        <p class="text-[10px] text-slate-400">Gestisci i depositi di risorse disponibili nella colonia.
-                        </p>
-                        <!--aggiungi un pulsante per aggiungere nuovi depositi  -->
-                        <button onclick="depositModal.open()"
-                            class="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold font-orbitron tracking-wider transition mt-2">
-                            + NUOVO DEPOSITO
-                        </button>
-                        <!-- Resource List Grid -->
-                        <div id="resourceListContainer"
-                            class="flex flex-wrap items-start gap-2 max-h-[200px] overflow-y-auto pr-1 mt-3">
-                            <!-- Generato dinamicamente -->
-                        </div>
-                    </div>
+                    
                 </div>
 
                 <!-- Dynamic Building Manager Card -->
@@ -417,42 +400,7 @@
             </div>
         </div>
     </div>
-    <!-- modal add resource -->
-    <div id="resourceModal"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full mx-4 space-y-4">
-            <h3 class="font-orbitron font-semibold text-lg text-slate-100">Nuovo Deposito Risorse</h3>
-            <!-- inserisci un select vuoto da popolare in js   -->
-            <div>
-                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Tipo di
-                    Risorsa</label>
-                <div class="flex items-center gap-3">
-                    <img id="resourcePreview" src="" alt="Anteprima Risorsa"
-                        class="w-10 h-10 object-contain hidden shrink-0">
-                    <select id="resourceTypeSelector" onChange="depositModal.changeImagePreview(this.value)"
-                        class="flex-1 min-w-0 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition font-mono">
-                        <option value="">Seleziona un tipo di risorsa</option>
-                    </select>
-                </div>
-                <input type="number" id="depositRateInput" placeholder="Tasso di produzione"
-                    class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition font-mono mt-2">
-            </div>
-            <div class="flex justify-end space-x-3 pt-2">
-                <button id="removeDepositButton" onclick="depositModal.removeDeposit()" title="Cancella"
-                    class="bg-red-800 hover:bg-red-900/60 text-slate-300 hover:text-red-200 rounded-lg px-4 py-2 text-xs font-semibold transition inline-flex items-center gap-1.5">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                </button>
-                <button onclick="depositModal.close()"
-                    class="bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg px-4 py-2 text-xs font-semibold transition">Annulla</button>
-                <button onclick="depositModal.confirmAddResource()"
-                    class="bg-blue-600 hover:bg-blue-500 text-white rounded-lg px-4 py-2 text-xs font-semibold transition">Aggiungi
-                    Deposito</button>
-            </div>
-        </div>
-    </div>
+    
     <!-- Toast alerts -->
     <div id="toast"
         class="fixed bottom-4 right-4 z-50 bg-slate-900 border border-blue-500 text-slate-100 rounded-xl px-4 py-3 shadow-2xl flex items-center space-x-3 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">

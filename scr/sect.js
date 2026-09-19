@@ -3,7 +3,6 @@
 const DATABASE_NAME = 'solar_expanse_v5';
 let database = {};
 let activeColonyKey = "";
-let depositModal;
 let reductionPop = 0;
 let reductionCost = 0;
 let colonyActive;
@@ -29,14 +28,14 @@ const resourcesTypes = [
 
 // init application
 window.onload = function () {
-    depositModal = new deposit();
+    
     // Load database from localStorage if available, otherwise initialize with default colony
     if (localStorage.getItem(DATABASE_NAME + '_db')) {
         let databaseTemp = JSON.parse(localStorage.getItem(DATABASE_NAME + '_db'));
         database.colonies = [];
         database.reduction = databaseTemp.reduction;
         for (const c of databaseTemp.colonies) {
-            const newColony = new colony(c.name, c.buildings.map(b => new building(b)), c.depositRate);
+            const newColony = new colony(c.name, c.buildings.map(b => new building(b)));
             newColony.utilizationPopRate=c.utilizationPopRate;
             newColony.popOcc=c._popOcc;
             newColony.popTot=c._popTot;
@@ -70,7 +69,6 @@ window.onload = function () {
     //ripopolo i selettori
     populateDefaultBuildingSelector();
     populateColonySelector();
-    populateResourceList();
     //carico la colonia
     loadColonyDirectly(activeColonyKey);
     //avvio i calcoli
@@ -126,7 +124,7 @@ function calculateAll(rebuildDOM = false) {
             }
         }
         else {
-            result.production[building.resourceType] = (result.production[building.resourceType] || 0) + count * building.productionRate;
+            result.production[building.resourceType] = (result.production[building.resourceType] || 0) + count * building.production;
         }
     });
 
@@ -205,7 +203,6 @@ function calculateAll(rebuildDOM = false) {
     if (rebuildDOM) {
         renderBuildingList(buildings);
         renderSandboxSliders(buildings, freePop);
-        populateResourceList();
     }
     
     let spanTip;
@@ -243,7 +240,7 @@ function renderBuildingList(buildings) {
         let typeBadge = "";
 
         if (isProd) {
-            typeBadge = `<span id="badge_rate_${b.id}" class="bg-amber-500/10 border border-amber-500/20 text-amber-500 px-2 py-0.5 rounded text-[9px] uppercase font-bold">Produttore (+${formatNum(b.productionRate)}) <img src="img/${b.resourceType}.png" alt="${b.resourceType}" title="${b.resourceType}" class="inline-flex w-4 h-4 object-contain"></span>`;
+            typeBadge = `<span id="badge_rate_${b.id}" class="bg-amber-500/10 border border-amber-500/20 text-amber-500 px-2 py-0.5 rounded text-[9px] uppercase font-bold">Produttore (+${formatNum(b.production)}) <img src="img/${b.resourceType}.png" alt="${b.resourceType}" title="${b.resourceType}" class="inline-flex w-4 h-4 object-contain"></span>`;
 
 
         } else {
@@ -450,12 +447,15 @@ function redistribuite(slider) {
     let result = slider;
     let total = sumObj(slider);
     let dif = 100-total;
-    let n= Object.keys(slider).length;
+    let n= resList.length;
+    let div=parseInt(dif/n);
+
     let last="";
     if (dif != 0) {
-        for (let v in result) {
+        for (let v of resList) {
             last=v;
-            result[v]+=parseInt(dif/n);
+            if (!result[v]) result[v]=0;
+            result[v]+=div;
         }
         if (dif % n != 0) {
             result[last]+=dif % n;
@@ -622,7 +622,6 @@ function saveBuilding() {
         let b=defaultBuilding[select.value];
         if (b.type=="producer") {
             b.production=parseInputFloat(input.value);
-            b.productionRate=parseInputFloat(input.value);
         }
         colonyActive.addBuilding(b);
         
@@ -632,7 +631,6 @@ function saveBuilding() {
         let b=colonyActive.buildings.find(b => b.id == select.value);
         if (b.type=="producer") {
             b.production=parseInputFloat(input.value);
-            b.productionRate=parseInputFloat(input.value);
         }
         triggerToast("edificio aggiornato");
     }
@@ -802,7 +800,7 @@ function calcProduction(b, result, res) {
     let prod = 0;
     for (const v of b) {
         if (v.type == "producer") {
-            prod += v.productionRate * result[v.id];
+            prod += v.production * result[v.id];
         }
         else {
             let i = v.resourceType.findIndex(r => r == res)
