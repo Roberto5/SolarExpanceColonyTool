@@ -309,7 +309,7 @@
                                 onchange="optimalchecked=this.checked;this.parentElement.classList.toggle('bg-purple-900/60', this.checked); this.parentElement.classList.toggle('text-purple-200', this.checked); if (this.checked) setOptimalNumbers();">
                             Imposta numeri ottimali
                         </label>
-                        <button id="resetSandboxBtn" onclick="resetSandbox()"
+                        <button id="resetSandboxBtn" onclick="document.getElementById('optimalNumbersCheckbox').checked = false;document.getElementById('optimalNumbersCheckbox').dispatchEvent(new Event('change'));resetSandbox()"
                             class="text-xs text-slate-400 hover:text-white transition uppercase tracking-wider font-semibold bg-slate-950 px-2.5 py-1 rounded border border-slate-850">
                             Reset Sliders
                         </button>
