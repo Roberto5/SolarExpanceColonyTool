@@ -170,7 +170,7 @@ let defaultBuilding = {
         selected: true,
         resourceType: ["rareMetal", "fissile"],
     },
-    fuelRefinery: {
+    FuelRefinery: {
         id: "FuelRefinery",
         name: "Raffineria di carburante",
         type: "consumer",
@@ -180,7 +180,7 @@ let defaultBuilding = {
         selected: true,
         resourceType: ["water"],
     },
-    eletrolysisPlant: {
+    EletrolysisPlant: {
         id: "ElectrolysisPlant",
         name: "Impianto di elettrolisi",
         type: "consumer",
